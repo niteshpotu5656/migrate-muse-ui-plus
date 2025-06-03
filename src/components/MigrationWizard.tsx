@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { 
   Database, 
   ArrowRight, 
@@ -22,7 +22,16 @@ import {
   AlertTriangle,
   BarChart,
   Clock,
-  FileText
+  FileText,
+  Lock,
+  Key,
+  Globe,
+  ArrowUpDown,
+  Copy,
+  Eye,
+  EyeOff,
+  Download,
+  Upload
 } from 'lucide-react';
 
 interface MigrationWizardProps {
@@ -37,7 +46,9 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
     complexity: 'unknown',
     migrationOptions: [],
     fieldMappings: {},
-    validationSettings: {}
+    validationSettings: {},
+    securitySettings: {},
+    finalReview: {}
   });
 
   const totalSteps = 7;
@@ -143,8 +154,9 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
                 </div>
 
                 {/* Arrow */}
-                <div className="flex items-center justify-center">
-                  <ArrowRight className="h-8 w-8 text-gray-400" />
+                <div className="flex items-center justify-center lg:flex-col">
+                  <ArrowRight className="h-8 w-8 text-gray-400 hidden lg:block" />
+                  <ArrowUpDown className="h-8 w-8 text-gray-400 lg:hidden" />
                 </div>
 
                 {/* Target Database */}
@@ -341,12 +353,484 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
             </div>
           )}
 
-          {/* Additional steps would be implemented similarly... */}
-          {currentStep > 3 && (
-            <div className="text-center space-y-4">
-              <div className="text-6xl">🚧</div>
-              <h3 className="text-xl font-semibold text-white">Step {currentStep}: {stepTitles[currentStep - 1]}</h3>
-              <p className="text-gray-400">This step is under development. Advanced configuration options will be available here.</p>
+          {/* Step 4: Migration Options */}
+          {currentStep === 4 && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h3 className="text-xl font-semibold text-white mb-2">Migration Options & Strategy</h3>
+                <p className="text-gray-400">Configure advanced migration settings and transformation rules</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <Card className="bg-white/5 border-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center">
+                      <Settings className="h-5 w-5 mr-2" />
+                      Migration Strategy
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-white">Migration Type</Label>
+                      <Select defaultValue="full">
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="full">Full Migration</SelectItem>
+                          <SelectItem value="incremental">Incremental Migration</SelectItem>
+                          <SelectItem value="selective">Selective Tables</SelectItem>
+                          <SelectItem value="schema-only">Schema Only</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-white">Batch Size</Label>
+                      <Select defaultValue="medium">
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="small">Small (1,000 records)</SelectItem>
+                          <SelectItem value="medium">Medium (10,000 records)</SelectItem>
+                          <SelectItem value="large">Large (100,000 records)</SelectItem>
+                          <SelectItem value="custom">Custom Size</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-white">Parallel Processing</Label>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="parallel" />
+                        <Label htmlFor="parallel" className="text-gray-400">Enable parallel processing</Label>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white/5 border-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center">
+                      <Zap className="h-5 w-5 mr-2" />
+                      Performance Options
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-white">Connection Pool Size</Label>
+                      <Input 
+                        type="number" 
+                        placeholder="10" 
+                        className="bg-white/10 border-white/20 text-white placeholder-gray-400"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-white">Timeout (seconds)</Label>
+                      <Input 
+                        type="number" 
+                        placeholder="300" 
+                        className="bg-white/10 border-white/20 text-white placeholder-gray-400"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="compression" />
+                        <Label htmlFor="compression" className="text-white">Enable data compression</Label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="resume" />
+                        <Label htmlFor="resume" className="text-white">Enable resume on failure</Label>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="bg-white/5 border-white/10">
+                <CardHeader>
+                  <CardTitle className="text-white">Data Transformation Rules</CardTitle>
+                  <CardDescription className="text-gray-400">Configure custom transformation logic</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-white">Custom SQL Transformations</Label>
+                    <Textarea 
+                      placeholder="-- Add custom SQL transformation rules here
+CASE 
+  WHEN status = 'active' THEN 1 
+  WHEN status = 'inactive' THEN 0 
+  ELSE NULL 
+END"
+                      className="bg-white/10 border-white/20 text-white placeholder-gray-400 min-h-[100px]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="nulls" />
+                        <Label htmlFor="nulls" className="text-white">Handle NULL values</Label>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="duplicates" />
+                        <Label htmlFor="duplicates" className="text-white">Remove duplicates</Label>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Step 5: Field Mapping */}
+          {currentStep === 5 && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h3 className="text-xl font-semibold text-white mb-2">Advanced Field Mapping</h3>
+                <p className="text-gray-400">Map source fields to target schema with custom transformations</p>
+              </div>
+
+              <Card className="bg-white/5 border-white/10">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <ArrowUpDown className="h-5 w-5 mr-2" />
+                    Table: users
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">Source → Target field mappings</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {[
+                    { source: 'id', target: 'user_id', type: 'INTEGER → UUID', status: 'auto' },
+                    { source: 'username', target: 'user_name', type: 'VARCHAR → TEXT', status: 'mapped' },
+                    { source: 'email', target: 'email_address', type: 'VARCHAR → TEXT', status: 'mapped' },
+                    { source: 'created_at', target: 'created_timestamp', type: 'DATETIME → TIMESTAMP', status: 'transform' },
+                    { source: 'status', target: 'is_active', type: 'ENUM → BOOLEAN', status: 'custom' }
+                  ].map((field, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                      <div className="flex items-center space-x-4 flex-1">
+                        <div className="flex-1">
+                          <div className="text-white font-medium">{field.source}</div>
+                          <div className="text-sm text-gray-400">{field.type.split(' → ')[0]}</div>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-gray-400" />
+                        <div className="flex-1">
+                          <div className="text-white font-medium">{field.target}</div>
+                          <div className="text-sm text-gray-400">{field.type.split(' → ')[1]}</div>
+                        </div>
+                      </div>
+                      <Badge className={`
+                        ${field.status === 'auto' ? 'bg-green-500/20 text-green-400 border-green-500/30' : ''}
+                        ${field.status === 'mapped' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : ''}
+                        ${field.status === 'transform' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : ''}
+                        ${field.status === 'custom' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : ''}
+                      `}>
+                        {field.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="bg-white/5 border-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-white">Custom Transformation</CardTitle>
+                    <CardDescription className="text-gray-400">status → is_active mapping</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-white">Transformation Rule</Label>
+                      <Textarea 
+                        defaultValue="CASE 
+  WHEN status = 'active' THEN true 
+  WHEN status = 'inactive' THEN false 
+  ELSE NULL 
+END"
+                        className="bg-white/10 border-white/20 text-white font-mono text-sm"
+                      />
+                    </div>
+                    <Button size="sm" className="w-full bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview Transformation
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white/5 border-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-white">Mapping Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Total Fields:</span>
+                      <span className="text-white">47</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Auto-mapped:</span>
+                      <span className="text-green-400">39</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Custom mappings:</span>
+                      <span className="text-blue-400">6</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Requires attention:</span>
+                      <span className="text-orange-400">2</span>
+                    </div>
+                    <Progress value={85} className="h-2" />
+                    <div className="text-center text-sm text-gray-400">85% mapping complete</div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* Step 6: Validation & Security */}
+          {currentStep === 6 && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h3 className="text-xl font-semibold text-white mb-2">Validation & Security Configuration</h3>
+                <p className="text-gray-400">Set up data validation rules and security protocols</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <Card className="bg-white/5 border-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center">
+                      <Shield className="h-5 w-5 mr-2" />
+                      Security Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="ssl" defaultChecked />
+                        <Label htmlFor="ssl" className="text-white">Use SSL/TLS encryption</Label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="auth" defaultChecked />
+                        <Label htmlFor="auth" className="text-white">Enable authentication</Label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="audit" />
+                        <Label htmlFor="audit" className="text-white">Enable audit logging</Label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-white">Encryption Key</Label>
+                      <div className="flex space-x-2">
+                        <Input 
+                          type="password" 
+                          placeholder="Enter encryption key"
+                          className="bg-white/10 border-white/20 text-white placeholder-gray-400"
+                        />
+                        <Button size="icon" variant="outline" className="border-white/20">
+                          <Key className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white/5 border-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center">
+                      <CheckCircle className="h-5 w-5 mr-2" />
+                      Validation Rules
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="integrity" defaultChecked />
+                        <Label htmlFor="integrity" className="text-white">Data integrity checks</Label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="foreign-keys" defaultChecked />
+                        <Label htmlFor="foreign-keys" className="text-white">Foreign key validation</Label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="checksums" />
+                        <Label htmlFor="checksums" className="text-white">Generate checksums</Label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-white">Validation Threshold</Label>
+                      <Select defaultValue="strict">
+                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="lenient">Lenient (warnings only)</SelectItem>
+                          <SelectItem value="moderate">Moderate (some errors allowed)</SelectItem>
+                          <SelectItem value="strict">Strict (zero tolerance)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="bg-white/5 border-white/10">
+                <CardHeader>
+                  <CardTitle className="text-white">Backup & Recovery</CardTitle>
+                  <CardDescription className="text-gray-400">Configure backup strategy before migration</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="backup-source" defaultChecked />
+                        <Label htmlFor="backup-source" className="text-white">Backup source database</Label>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="point-in-time" />
+                        <Label htmlFor="point-in-time" className="text-white">Point-in-time recovery</Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-white">Backup Location</Label>
+                    <Input 
+                      placeholder="/backups/migration-backup-{timestamp}"
+                      className="bg-white/10 border-white/20 text-white placeholder-gray-400"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Step 7: Review & Launch */}
+          {currentStep === 7 && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h3 className="text-xl font-semibold text-white mb-2">Migration Review & Launch</h3>
+                <p className="text-gray-400">Final review of all migration settings before execution</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <Card className="bg-white/5 border-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-white">Migration Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Source Database:</span>
+                        <span className="text-white">{databases.find(db => db.id === wizardData.sourceDb)?.name || 'Not selected'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Target Database:</span>
+                        <span className="text-white">{databases.find(db => db.id === wizardData.targetDb)?.name || 'Not selected'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Migration Type:</span>
+                        <span className="text-white">Full Migration</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Estimated Duration:</span>
+                        <span className="text-white">6.5 hours</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Complexity Score:</span>
+                        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">7.2/10</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white/5 border-white/10">
+                  <CardHeader>
+                    <CardTitle className="text-white">Readiness Check</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {[
+                      { check: 'Database connections', status: 'passed' },
+                      { check: 'Schema compatibility', status: 'passed' },
+                      { check: 'Field mappings', status: 'passed' },
+                      { check: 'Security configuration', status: 'passed' },
+                      { check: 'Backup preparation', status: 'warning' }
+                    ].map((item, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="text-white">{item.check}</span>
+                        <div className="flex items-center">
+                          {item.status === 'passed' && <CheckCircle className="h-5 w-5 text-green-400" />}
+                          {item.status === 'warning' && <AlertTriangle className="h-5 w-5 text-orange-400" />}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="bg-white/5 border-white/10">
+                <CardHeader>
+                  <CardTitle className="text-white">Pre-Migration Checklist</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      'Source database backup completed',
+                      'Target database connectivity verified',
+                      'All field mappings reviewed',
+                      'Security settings configured',
+                      'Migration window scheduled',
+                      'Rollback plan prepared'
+                    ].map((item, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <Checkbox id={`checklist-${index}`} />
+                        <Label htmlFor={`checklist-${index}`} className="text-white text-sm">{item}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex space-x-4">
+                <Button className="flex-1 bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Configuration
+                </Button>
+                <Button className="flex-1 bg-purple-500/20 text-purple-400 border-purple-500/30 hover:bg-purple-500/30">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Generate Report
+                </Button>
+              </div>
+
+              <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                <div className="flex items-center text-green-400 mb-2">
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  <span className="font-medium">Migration configuration complete!</span>
+                </div>
+                <p className="text-green-300 text-sm">All settings have been validated and the migration is ready to begin.</p>
+              </div>
             </div>
           )}
 
@@ -376,6 +860,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
         ) : (
           <Button 
             onClick={nextStep}
+            disabled={currentStep === 1 && (!wizardData.sourceDb || !wizardData.targetDb)}
             className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
           >
             Next

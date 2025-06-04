@@ -47,7 +47,12 @@ const Index = () => {
                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
                 System Healthy
               </Badge>
-              <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="bg-white text-gray-900 font-semibold border-gray-300 hover:bg-gray-100"
+                onClick={() => setActiveTab('settings')}
+              >
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </Button>

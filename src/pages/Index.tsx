@@ -10,6 +10,8 @@ import { MigrationWizard } from '@/components/MigrationWizard';
 import { MigrationConsole } from '@/components/MigrationConsole';
 import { MigrationHistory } from '@/components/MigrationHistory';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { DryRunPanel } from '@/components/DryRunPanel';
+import { ValidationPanel } from '@/components/ValidationPanel';
 import { 
   Database, 
   Play, 
@@ -25,6 +27,7 @@ import {
 const Index = () => {
   const [activeTab, setActiveTab] = useState('welcome');
   const [migrationInProgress, setMigrationInProgress] = useState(false);
+  const [currentMigrationId, setCurrentMigrationId] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -96,15 +99,35 @@ const Index = () => {
           <TabsContent value="wizard" className="space-y-6">
             <MigrationWizard onMigrationStart={() => {
               setMigrationInProgress(true);
+              setCurrentMigrationId('migration_' + Date.now());
               setActiveTab('console');
             }} />
           </TabsContent>
 
           <TabsContent value="console" className="space-y-6">
-            <MigrationConsole 
-              isActive={migrationInProgress} 
-              onMigrationComplete={() => setMigrationInProgress(false)} 
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <MigrationConsole 
+                isActive={migrationInProgress} 
+                onMigrationComplete={() => setMigrationInProgress(false)} 
+              />
+              
+              {currentMigrationId && (
+                <ValidationPanel migrationId={currentMigrationId} />
+              )}
+            </div>
+            
+            {!migrationInProgress && currentMigrationId && (
+              <DryRunPanel 
+                migrationConfig={{
+                  sourceDb: 'postgresql',
+                  targetDb: 'mongodb',
+                  options: { dryRun: true }
+                }}
+                onProceedToActualMigration={() => {
+                  setMigrationInProgress(true);
+                }}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">

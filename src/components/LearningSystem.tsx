@@ -1,85 +1,208 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Brain, 
   TrendingUp, 
   Clock, 
-  Target, 
-  AlertTriangle,
-  CheckCircle,
-  BarChart,
-  Lightbulb,
   Database,
-  Zap
-} from 'lucide-react';
+  Zap,
+  Target,
+  BarChart,
+  CheckCircle,
+  AlertTriangle,
+  Lightbulb,
+  Award,
+  Activity
+} from 'lucide-react'
 
-interface LearningSystemProps {
-  migrationHistory?: any[];
+interface LearningInsight {
+  id: string
+  type: 'performance' | 'optimization' | 'pattern' | 'recommendation'
+  title: string
+  description: string
+  impact: 'high' | 'medium' | 'low'
+  confidence: number
+  migrationCount: number
+  lastSeen: string
 }
 
-export const LearningSystem: React.FC<LearningSystemProps> = ({ migrationHistory = [] }) => {
-  const [activeInsight, setActiveInsight] = useState(0);
+interface PerformanceMetric {
+  name: string
+  value: string
+  trend: 'up' | 'down' | 'stable'
+  change: string
+  icon: any
+}
 
-  const performanceInsights = [
+export const LearningSystem: React.FC = () => {
+  const [insights, setInsights] = useState<LearningInsight[]>([])
+  const [isLearning, setIsLearning] = useState(false)
+
+  const learningInsights: LearningInsight[] = [
     {
-      type: 'optimization',
-      title: 'Batch Size Optimization',
-      description: 'Based on your PostgreSQL → MongoDB migrations, reducing batch size to 5,000 records improved performance by 23%',
-      impact: 'High',
+      id: '1',
+      type: 'performance',
+      title: 'Optimal Batch Size Identified',
+      description: 'Batch size of 15,000 rows consistently delivers 40% better performance for PostgreSQL to MongoDB migrations',
+      impact: 'high',
       confidence: 94,
-      recommendation: 'Use smaller batch sizes for cross-platform migrations'
+      migrationCount: 12,
+      lastSeen: '2 hours ago'
     },
     {
-      type: 'warning',
-      title: 'Schema Complexity Alert',
-      description: 'Migrations with 15+ foreign key relationships show 67% higher failure rate',
-      impact: 'Medium',
-      confidence: 89,
-      recommendation: 'Consider pre-migration schema simplification'
+      id: '2',
+      type: 'optimization',
+      title: 'JSON Field Mapping Pattern',
+      description: 'Automatic JSON field flattening reduces migration time by 25% for e-commerce databases',
+      impact: 'medium',
+      confidence: 87,
+      migrationCount: 8,
+      lastSeen: '1 day ago'
     },
     {
-      type: 'success',
-      title: 'SSL Configuration Pattern',
-      description: 'Enabling SSL encryption adds only 3% overhead but improves security compliance score',
-      impact: 'Low',
-      confidence: 98,
-      recommendation: 'Always enable SSL for production migrations'
+      id: '3',
+      type: 'pattern',
+      title: 'Index Recreation Strategy',
+      description: 'Recreating indexes after migration is 60% faster than maintaining them during migration',
+      impact: 'high',
+      confidence: 91,
+      migrationCount: 15,
+      lastSeen: '3 hours ago'
+    },
+    {
+      id: '4',
+      type: 'recommendation',
+      title: 'Parallel Processing Sweet Spot',
+      description: '4 parallel threads optimal for tables with 100K+ rows on current hardware configuration',
+      impact: 'medium',
+      confidence: 82,
+      migrationCount: 6,
+      lastSeen: '5 hours ago'
+    },
+    {
+      id: '5',
+      type: 'optimization',
+      title: 'Data Type Conversion Efficiency',
+      description: 'Pre-converting ENUM to TEXT before migration reduces error rate by 75%',
+      impact: 'high',
+      confidence: 96,
+      migrationCount: 18,
+      lastSeen: '30 minutes ago'
     }
-  ];
+  ]
 
-  const migrationPatterns = [
-    { source: 'PostgreSQL', target: 'MongoDB', count: 12, avgDuration: '4.2h', successRate: 96 },
-    { source: 'MySQL', target: 'PostgreSQL', count: 8, avgDuration: '2.1h', successRate: 100 },
-    { source: 'MongoDB', target: 'Elasticsearch', count: 5, avgDuration: '6.7h', successRate: 80 },
-    { source: 'Oracle', target: 'PostgreSQL', count: 3, avgDuration: '12.3h', successRate: 67 }
-  ];
+  const performanceMetrics: PerformanceMetric[] = [
+    {
+      name: 'Avg Migration Speed',
+      value: '2.4M rows/hour',
+      trend: 'up',
+      change: '+18%',
+      icon: TrendingUp
+    },
+    {
+      name: 'Success Rate',
+      value: '97.8%',
+      trend: 'up',
+      change: '+2.1%',
+      icon: Target
+    },
+    {
+      name: 'Error Recovery Time',
+      value: '3.2 minutes',
+      trend: 'down',
+      change: '-45%',
+      icon: Clock
+    },
+    {
+      name: 'Data Integrity Score',
+      value: '99.9%',
+      trend: 'stable',
+      change: '0%',
+      icon: CheckCircle
+    }
+  ]
+
+  useEffect(() => {
+    // Simulate learning new insights over time
+    const interval = setInterval(() => {
+      if (insights.length < learningInsights.length) {
+        setInsights(prev => [...prev, learningInsights[prev.length]])
+      }
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [insights.length])
+
+  const runLearningAnalysis = () => {
+    setIsLearning(true)
+    setTimeout(() => {
+      setInsights(learningInsights)
+      setIsLearning(false)
+    }, 2000)
+  }
 
   const getImpactColor = (impact: string) => {
     switch (impact) {
-      case 'High': return 'text-red-400 bg-red-500/20 border-red-500/30';
-      case 'Medium': return 'text-orange-400 bg-orange-500/20 border-orange-500/30';
-      case 'Low': return 'text-green-400 bg-green-500/20 border-green-500/30';
-      default: return 'text-gray-400 bg-gray-500/20 border-gray-500/30';
+      case 'high': return 'bg-red-500/20 text-red-400 border-red-500/30'
+      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+      case 'low': return 'bg-green-500/20 text-green-400 border-green-500/30'
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
     }
-  };
+  }
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'performance': return <TrendingUp className="h-4 w-4" />
+      case 'optimization': return <Zap className="h-4 w-4" />
+      case 'pattern': return <BarChart className="h-4 w-4" />
+      case 'recommendation': return <Lightbulb className="h-4 w-4" />
+      default: return <Brain className="h-4 w-4" />
+    }
+  }
+
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'up': return '↗️'
+      case 'down': return '↘️'
+      case 'stable': return '→'
+      default: return ''
+    }
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
         <CardHeader>
-          <CardTitle className="text-white text-xl flex items-center">
-            <Brain className="h-6 w-6 mr-3" />
-            Learning System & Performance Intelligence
-          </CardTitle>
-          <CardDescription className="text-gray-400">
-            AI-powered insights from {migrationHistory.length || 28} completed migrations
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-white text-xl flex items-center">
+                <Brain className="h-6 w-6 mr-3" />
+                AI Learning & Performance Optimization
+              </CardTitle>
+              <CardDescription className="text-gray-400">
+                Intelligent insights from migration history and performance patterns
+              </CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                <Activity className="h-3 w-3 mr-1" />
+                Learning Active
+              </Badge>
+              <Button 
+                onClick={runLearningAnalysis}
+                disabled={isLearning}
+                size="sm"
+                className="bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30"
+              >
+                {isLearning ? 'Analyzing...' : 'Refresh Insights'}
+              </Button>
+            </div>
+          </div>
         </CardHeader>
       </Card>
 
@@ -87,120 +210,138 @@ export const LearningSystem: React.FC<LearningSystemProps> = ({ migrationHistory
         <TabsList className="grid w-full grid-cols-3 bg-black/20 backdrop-blur-xl border border-white/10">
           <TabsTrigger value="insights" className="data-[state=active]:bg-white/20 text-white">
             <Lightbulb className="h-4 w-4 mr-2" />
-            Insights
+            Smart Insights
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="data-[state=active]:bg-white/20 text-white">
+            <BarChart className="h-4 w-4 mr-2" />
+            Performance Metrics
           </TabsTrigger>
           <TabsTrigger value="patterns" className="data-[state=active]:bg-white/20 text-white">
-            <BarChart className="h-4 w-4 mr-2" />
-            Patterns
-          </TabsTrigger>
-          <TabsTrigger value="recommendations" className="data-[state=active]:bg-white/20 text-white">
-            <Target className="h-4 w-4 mr-2" />
-            Recommendations
+            <Award className="h-4 w-4 mr-2" />
+            Best Practices
           </TabsTrigger>
         </TabsList>
 
-        {/* AI Insights Tab */}
-        <TabsContent value="insights" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {performanceInsights.map((insight, index) => (
-              <Card key={index} className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-white flex items-center">
-                      {insight.type === 'optimization' && <TrendingUp className="h-5 w-5 mr-2 text-blue-400" />}
-                      {insight.type === 'warning' && <AlertTriangle className="h-5 w-5 mr-2 text-orange-400" />}
-                      {insight.type === 'success' && <CheckCircle className="h-5 w-5 mr-2 text-green-400" />}
-                      {insight.title}
-                    </CardTitle>
-                    <Badge className={getImpactColor(insight.impact)}>
-                      {insight.impact}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-gray-300 text-sm">{insight.description}</p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Confidence Level</span>
-                      <span className="text-white">{insight.confidence}%</span>
+        <TabsContent value="insights" className="space-y-4">
+          {insights.length === 0 ? (
+            <Card className="bg-white/5 border-white/10">
+              <CardContent className="p-8 text-center">
+                <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-white font-medium mb-2">Learning in Progress</h3>
+                <p className="text-gray-400 mb-4">AI is analyzing migration patterns to generate insights</p>
+                <Button onClick={runLearningAnalysis} disabled={isLearning}>
+                  {isLearning ? 'Analyzing...' : 'Start Analysis'}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {insights.map((insight) => (
+                <Card key={insight.id} className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        {getTypeIcon(insight.type)}
+                        <Badge className={getImpactColor(insight.impact)}>
+                          {insight.impact} impact
+                        </Badge>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white font-bold">{insight.confidence}%</div>
+                        <div className="text-gray-400 text-xs">confidence</div>
+                      </div>
                     </div>
-                    <Progress value={insight.confidence} className="h-2" />
-                  </div>
-                  <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                    <p className="text-blue-300 text-sm font-medium">Recommendation:</p>
-                    <p className="text-blue-200 text-sm">{insight.recommendation}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <CardTitle className="text-white text-lg">{insight.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-gray-300 text-sm">{insight.description}</p>
+                    <div className="flex items-center justify-between text-xs text-gray-400">
+                      <span>Based on {insight.migrationCount} migrations</span>
+                      <span>{insight.lastSeen}</span>
+                    </div>
+                    <Progress value={insight.confidence} className="h-1" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
-        {/* Migration Patterns Tab */}
-        <TabsContent value="patterns" className="space-y-6">
+        <TabsContent value="performance" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {performanceMetrics.map((metric) => {
+              const Icon = metric.icon
+              return (
+                <Card key={metric.name} className="bg-white/5 border-white/10">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <Icon className="h-8 w-8 text-blue-400" />
+                      <span className="text-2xl">{getTrendIcon(metric.trend)}</span>
+                    </div>
+                    <div className="text-2xl font-bold text-white mb-1">{metric.value}</div>
+                    <div className="text-sm text-gray-400 mb-2">{metric.name}</div>
+                    <div className={`text-sm font-medium ${
+                      metric.trend === 'up' ? 'text-green-400' : 
+                      metric.trend === 'down' ? 'text-red-400' : 'text-gray-400'
+                    }`}>
+                      {metric.change} from last week
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+
           <Card className="bg-white/5 border-white/10">
             <CardHeader>
-              <CardTitle className="text-white">Migration Pattern Analysis</CardTitle>
-              <CardDescription className="text-gray-400">
-                Historical performance data across different database combinations
-              </CardDescription>
+              <CardTitle className="text-white">Performance Trends</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {migrationPatterns.map((pattern, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
-                    <div className="flex items-center space-x-4">
-                      <Database className="h-5 w-5 text-blue-400" />
-                      <div>
-                        <div className="text-white font-medium">
-                          {pattern.source} → {pattern.target}
-                        </div>
-                        <div className="text-sm text-gray-400">
-                          {pattern.count} migrations completed
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-6">
-                      <div className="text-center">
-                        <div className="text-white font-medium">{pattern.avgDuration}</div>
-                        <div className="text-xs text-gray-400">Avg Duration</div>
-                      </div>
-                      <div className="text-center">
-                        <div className={`font-medium ${pattern.successRate >= 95 ? 'text-green-400' : pattern.successRate >= 80 ? 'text-orange-400' : 'text-red-400'}`}>
-                          {pattern.successRate}%
-                        </div>
-                        <div className="text-xs text-gray-400">Success Rate</div>
-                      </div>
-                    </div>
+                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                    <span className="text-green-400 font-medium">Performance Improvement</span>
                   </div>
-                ))}
+                  <p className="text-gray-300 text-sm">
+                    Migration speed has improved by 18% over the last month due to optimized batch processing and learned patterns.
+                  </p>
+                </div>
+                <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Target className="h-5 w-5 text-blue-400" />
+                    <span className="text-blue-400 font-medium">Accuracy Enhancement</span>
+                  </div>
+                  <p className="text-gray-300 text-sm">
+                    Success rate increased by 2.1% through improved error handling and data validation techniques.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Recommendations Tab */}
-        <TabsContent value="recommendations" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <TabsContent value="patterns" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-white/5 border-white/10">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
-                  <Zap className="h-5 w-5 mr-2 text-yellow-400" />
-                  Performance Optimizations
+                  <Award className="h-5 w-5 mr-2" />
+                  Recommended Practices
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-                  <span className="text-green-300">Enable parallel processing</span>
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">+34% faster</Badge>
+                <div className="p-3 bg-green-500/10 border border-green-500/30 rounded">
+                  <div className="text-green-400 font-medium text-sm">✓ Use 15K row batches</div>
+                  <div className="text-gray-300 text-xs">Optimal for most database types</div>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                  <span className="text-blue-300">Optimize batch size</span>
-                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">+23% faster</Badge>
+                <div className="p-3 bg-green-500/10 border border-green-500/30 rounded">
+                  <div className="text-green-400 font-medium text-sm">✓ Enable parallel processing</div>
+                  <div className="text-gray-300 text-xs">For tables with 100K+ rows</div>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                  <span className="text-purple-300">Use connection pooling</span>
-                  <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">+18% faster</Badge>
+                <div className="p-3 bg-green-500/10 border border-green-500/30 rounded">
+                  <div className="text-green-400 font-medium text-sm">✓ Recreate indexes post-migration</div>
+                  <div className="text-gray-300 text-xs">60% faster than maintaining during migration</div>
                 </div>
               </CardContent>
             </Card>
@@ -208,31 +349,22 @@ export const LearningSystem: React.FC<LearningSystemProps> = ({ migrationHistory
             <Card className="bg-white/5 border-white/10">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
-                  <Clock className="h-5 w-5 mr-2 text-blue-400" />
-                  Predicted Improvements
+                  <AlertTriangle className="h-5 w-5 mr-2" />
+                  Common Pitfalls
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Estimated time reduction</span>
-                    <span className="text-green-400">2.3 hours</span>
-                  </div>
-                  <Progress value={75} className="h-2" />
+              <CardContent className="space-y-3">
+                <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded">
+                  <div className="text-yellow-400 font-medium text-sm">⚠ Large transaction sizes</div>
+                  <div className="text-gray-300 text-xs">Can cause timeout and rollback issues</div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Success rate improvement</span>
-                    <span className="text-green-400">+12%</span>
-                  </div>
-                  <Progress value={85} className="h-2" />
+                <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded">
+                  <div className="text-yellow-400 font-medium text-sm">⚠ Ignoring data type differences</div>
+                  <div className="text-gray-300 text-xs">Lead to 40% of migration failures</div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Resource efficiency</span>
-                    <span className="text-green-400">+28%</span>
-                  </div>
-                  <Progress value={90} className="h-2" />
+                <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded">
+                  <div className="text-yellow-400 font-medium text-sm">⚠ Skipping validation</div>
+                  <div className="text-gray-300 text-xs">Results in data integrity issues</div>
                 </div>
               </CardContent>
             </Card>
@@ -240,5 +372,5 @@ export const LearningSystem: React.FC<LearningSystemProps> = ({ migrationHistory
         </TabsContent>
       </Tabs>
     </div>
-  );
-};
+  )
+}

@@ -119,9 +119,26 @@ const Index = () => {
             {!migrationInProgress && currentMigrationId && (
               <DryRunPanel 
                 migrationConfig={{
-                  sourceDb: 'postgresql',
-                  targetDb: 'mongodb',
-                  options: { dryRun: true }
+                  name: 'PostgreSQL to MongoDB Migration',
+                  description: 'Sample migration for testing purposes',
+                  sourceConfig: {
+                    type: 'postgresql',
+                    host: 'localhost',
+                    port: 5432,
+                    database: 'source_db'
+                  },
+                  targetConfig: {
+                    type: 'mongodb',
+                    host: 'localhost',
+                    port: 27017,
+                    database: 'target_db'
+                  },
+                  migrationType: 'full',
+                  options: { 
+                    dryRun: true,
+                    batchSize: 10000,
+                    enableValidation: true
+                  }
                 }}
                 onProceedToActualMigration={() => {
                   setMigrationInProgress(true);

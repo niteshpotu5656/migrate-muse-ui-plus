@@ -53,7 +53,7 @@ const Index = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="bg-white text-gray-900 font-semibold border-gray-300 hover:bg-gray-100"
+                className="bg-white text-gray-900 font-semibold border-white hover:bg-gray-100"
                 onClick={() => setActiveTab('settings')}
               >
                 <Settings className="h-4 w-4 mr-2" />
@@ -69,23 +69,23 @@ const Index = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Navigation Tabs */}
           <TabsList className="grid w-full grid-cols-5 bg-black/20 backdrop-blur-xl border border-white/10">
-            <TabsTrigger value="welcome" className="data-[state=active]:bg-white/20 text-white">
+            <TabsTrigger value="welcome" className="data-[state=active]:bg-white/20 text-white hover:bg-white/10">
               <Database className="h-4 w-4 mr-2" />
               Dashboard
             </TabsTrigger>
-            <TabsTrigger value="wizard" className="data-[state=active]:bg-white/20 text-white">
+            <TabsTrigger value="wizard" className="data-[state=active]:bg-white/20 text-white hover:bg-white/10">
               <Play className="h-4 w-4 mr-2" />
               New Migration
             </TabsTrigger>
-            <TabsTrigger value="console" className="data-[state=active]:bg-white/20 text-white">
+            <TabsTrigger value="console" className="data-[state=active]:bg-white/20 text-white hover:bg-white/10">
               <BarChart className="h-4 w-4 mr-2" />
               Live Console
             </TabsTrigger>
-            <TabsTrigger value="history" className="data-[state=active]:bg-white/20 text-white">
+            <TabsTrigger value="history" className="data-[state=active]:bg-white/20 text-white hover:bg-white/10">
               <History className="h-4 w-4 mr-2" />
               History
             </TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-white/20 text-white">
+            <TabsTrigger value="settings" className="data-[state=active]:bg-white/20 text-white hover:bg-white/10">
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </TabsTrigger>

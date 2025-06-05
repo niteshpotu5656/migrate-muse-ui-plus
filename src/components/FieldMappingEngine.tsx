@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CustomTransformationBuilder } from './CustomTransformationBuilder';
 import { 
   ArrowRight, 
   ArrowUpDown,
@@ -19,7 +21,8 @@ import {
   Eye,
   Database,
   Type,
-  Hash
+  Hash,
+  Wand2
 } from 'lucide-react';
 
 interface FieldMapping {
@@ -49,6 +52,7 @@ export const FieldMappingEngine: React.FC<FieldMappingEngineProps> = ({
   const [selectedSourceField, setSelectedSourceField] = useState<string>('');
   const [selectedTargetField, setSelectedTargetField] = useState<string>('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [transformationRules, setTransformationRules] = useState([]);
 
   // Mock schema data if not provided
   const mockSourceSchema = sourceSchema.length > 0 ? sourceSchema : [
@@ -171,176 +175,196 @@ export const FieldMappingEngine: React.FC<FieldMappingEngineProps> = ({
         </CardHeader>
       </Card>
 
-      {/* Field Selection */}
-      <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-white">Create New Mapping</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
-            <div className="space-y-2">
-              <Label className="text-white">Source Field</Label>
-              <Select value={selectedSourceField} onValueChange={setSelectedSourceField}>
-                <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                  <SelectValue placeholder="Select source field" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockSourceSchema.map((field) => (
-                    <SelectItem key={field.name} value={field.name}>
-                      <div className="flex items-center space-x-2">
-                        <Type className="h-4 w-4" />
-                        <span>{field.name}</span>
-                        <Badge variant="outline" className="text-xs">{field.type}</Badge>
+      <Tabs defaultValue="mapping" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 bg-black/20 backdrop-blur-xl border border-white/10">
+          <TabsTrigger value="mapping" className="data-[state=active]:bg-white/20 text-white">
+            <Database className="h-4 w-4 mr-2" />
+            Field Mapping
+          </TabsTrigger>
+          <TabsTrigger value="transformations" className="data-[state=active]:bg-white/20 text-white">
+            <Wand2 className="h-4 w-4 mr-2" />
+            Custom Transformations
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="mapping" className="space-y-6">
+          {/* Field Selection */}
+          <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
+            <CardHeader>
+              <CardTitle className="text-white">Create New Mapping</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
+                <div className="space-y-2">
+                  <Label className="text-white">Source Field</Label>
+                  <Select value={selectedSourceField} onValueChange={setSelectedSourceField}>
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select source field" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockSourceSchema.map((field) => (
+                        <SelectItem key={field.name} value={field.name}>
+                          <div className="flex items-center space-x-2">
+                            <Type className="h-4 w-4" />
+                            <span>{field.name}</span>
+                            <Badge variant="outline" className="text-xs">{field.type}</Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-center">
+                  <ArrowRight className="h-6 w-6 text-gray-400" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white">Target Field</Label>
+                  <Select value={selectedTargetField} onValueChange={setSelectedTargetField}>
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select target field" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockTargetSchema.map((field) => (
+                        <SelectItem key={field.name} value={field.name}>
+                          <div className="flex items-center space-x-2">
+                            <Database className="h-4 w-4" />
+                            <span>{field.name}</span>
+                            <Badge variant="outline" className="text-xs">{field.type}</Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button 
+                  onClick={addMapping}
+                  disabled={!selectedSourceField || !selectedTargetField}
+                  className="bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Mapping
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Existing Mappings */}
+          <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white">Field Mappings ({mappings.length})</CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    checked={showAdvanced}
+                    onCheckedChange={setShowAdvanced}
+                  />
+                  <Label className="text-white text-sm">Advanced Mode</Label>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {mappings.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <ArrowUpDown className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No field mappings created yet.</p>
+                  <p className="text-sm">Add mappings above or use Auto-Map to get started.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {mappings.map((mapping) => (
+                    <div key={mapping.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+                      {/* ... keep existing code (mapping display logic) */}
+                      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-center">
+                        {/* Source Field */}
+                        <div className="space-y-1">
+                          <div className="text-white font-medium">{mapping.sourceField}</div>
+                          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
+                            {mapping.sourceType}
+                          </Badge>
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="flex justify-center">
+                          <ArrowRight className="h-4 w-4 text-gray-400" />
+                        </div>
+
+                        {/* Target Field */}
+                        <div className="space-y-1">
+                          <div className="text-white font-medium">{mapping.targetField}</div>
+                          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
+                            {mapping.targetType}
+                          </Badge>
+                        </div>
+
+                        {/* Transformation Type */}
+                        <div className="space-y-2">
+                          <Select 
+                            value={mapping.transformationType} 
+                            onValueChange={(value: any) => updateMapping(mapping.id, { transformationType: value })}
+                          >
+                            <SelectTrigger className="bg-white/10 border-white/20 text-white text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="direct">Direct Copy</SelectItem>
+                              <SelectItem value="function">Apply Function</SelectItem>
+                              <SelectItem value="conditional">Conditional Logic</SelectItem>
+                              <SelectItem value="custom">Custom SQL</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {showAdvanced && mapping.transformationType !== 'direct' && (
+                            <Textarea
+                              placeholder="Enter transformation rule..."
+                              value={mapping.transformationRule || ''}
+                              onChange={(e) => updateMapping(mapping.id, { transformationRule: e.target.value })}
+                              className="bg-white/10 border-white/20 text-white placeholder-gray-400 text-xs"
+                              rows={2}
+                            />
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-white/20 text-white hover:bg-white/10"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => removeMapping(mapping.id)}
+                            className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div className="flex justify-center">
-              <ArrowRight className="h-6 w-6 text-gray-400" />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-white">Target Field</Label>
-              <Select value={selectedTargetField} onValueChange={setSelectedTargetField}>
-                <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                  <SelectValue placeholder="Select target field" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockTargetSchema.map((field) => (
-                    <SelectItem key={field.name} value={field.name}>
-                      <div className="flex items-center space-x-2">
-                        <Database className="h-4 w-4" />
-                        <span>{field.name}</span>
-                        <Badge variant="outline" className="text-xs">{field.type}</Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button 
-              onClick={addMapping}
-              disabled={!selectedSourceField || !selectedTargetField}
-              className="bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Mapping
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Existing Mappings */}
-      <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-white">Field Mappings ({mappings.length})</CardTitle>
-            <div className="flex items-center space-x-2">
-              <Switch 
-                checked={showAdvanced}
-                onCheckedChange={setShowAdvanced}
-              />
-              <Label className="text-white text-sm">Advanced Mode</Label>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {mappings.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
-              <ArrowUpDown className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No field mappings created yet.</p>
-              <p className="text-sm">Add mappings above or use Auto-Map to get started.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {mappings.map((mapping) => (
-                <div key={mapping.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-center">
-                    {/* Source Field */}
-                    <div className="space-y-1">
-                      <div className="text-white font-medium">{mapping.sourceField}</div>
-                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
-                        {mapping.sourceType}
-                      </Badge>
-                    </div>
-
-                    {/* Arrow */}
-                    <div className="flex justify-center">
-                      <ArrowRight className="h-4 w-4 text-gray-400" />
-                    </div>
-
-                    {/* Target Field */}
-                    <div className="space-y-1">
-                      <div className="text-white font-medium">{mapping.targetField}</div>
-                      <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
-                        {mapping.targetType}
-                      </Badge>
-                    </div>
-
-                    {/* Transformation Type */}
-                    <div className="space-y-2">
-                      <Select 
-                        value={mapping.transformationType} 
-                        onValueChange={(value: any) => updateMapping(mapping.id, { transformationType: value })}
-                      >
-                        <SelectTrigger className="bg-white/10 border-white/20 text-white text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="direct">Direct Copy</SelectItem>
-                          <SelectItem value="function">Apply Function</SelectItem>
-                          <SelectItem value="conditional">Conditional Logic</SelectItem>
-                          <SelectItem value="custom">Custom SQL</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      
-                      {showAdvanced && mapping.transformationType !== 'direct' && (
-                        <Textarea
-                          placeholder="Enter transformation rule..."
-                          value={mapping.transformationRule || ''}
-                          onChange={(e) => updateMapping(mapping.id, { transformationRule: e.target.value })}
-                          className="bg-white/10 border-white/20 text-white placeholder-gray-400 text-xs"
-                          rows={2}
-                        />
+                      {/* Transformation Preview */}
+                      {showAdvanced && (
+                        <div className="mt-3 p-2 bg-black/20 rounded text-xs font-mono text-gray-300">
+                          {getTransformationPreview(mapping)}
+                        </div>
                       )}
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-white/20 text-white hover:bg-white/10"
-                      >
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => removeMapping(mapping.id)}
-                        className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Transformation Preview */}
-                  {showAdvanced && (
-                    <div className="mt-3 p-2 bg-black/20 rounded text-xs font-mono text-gray-300">
-                      {getTransformationPreview(mapping)}
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="transformations">
+          <CustomTransformationBuilder onRulesChange={setTransformationRules} />
+        </TabsContent>
+      </Tabs>
 
       {/* Summary & Actions */}
       <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
@@ -349,13 +373,13 @@ export const FieldMappingEngine: React.FC<FieldMappingEngineProps> = ({
             <div className="space-y-1">
               <div className="text-white font-medium">Mapping Summary</div>
               <div className="text-gray-400 text-sm">
-                {mappings.length} field mappings configured
+                {mappings.length} field mappings + {transformationRules.length} transformation rules configured
               </div>
             </div>
             <Button 
               onClick={() => onMappingComplete(mappings)}
               disabled={mappings.length === 0}
-              className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
+              className="bg-white text-gray-900 font-semibold hover:bg-gray-100"
             >
               Continue to Validation
             </Button>

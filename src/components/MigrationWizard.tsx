@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,9 @@ import { Switch } from "@/components/ui/switch";
 import { DatabaseConnectionConfig } from './DatabaseConnectionConfig';
 import { FieldMappingEngine } from './FieldMappingEngine';
 import { ComplexityIndicator } from './ComplexityIndicator';
+import { ValidationPanel } from './ValidationPanel';
+import { DryRunPanel } from './DryRunPanel';
+import { useToast } from "@/hooks/use-toast";
 import { 
   Database, 
   ArrowRight, 
@@ -26,7 +30,9 @@ import {
   BarChart,
   Clock,
   FileText,
-  ArrowUpDown
+  ArrowUpDown,
+  Target,
+  Loader2
 } from 'lucide-react';
 
 interface MigrationWizardProps {
@@ -41,6 +47,8 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
     sourceConfig: null,
     targetConfig: null,
     fieldMappings: [],
+    validationResults: null,
+    dryRunResults: null,
     migrationOptions: {
       type: 'full',
       batchSize: 'medium',
@@ -50,7 +58,8 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
     }
   });
 
-  const totalSteps = 8;
+  const { toast } = useToast();
+  const totalSteps = 9;
   const progress = (currentStep / totalSteps) * 100;
 
   const databases = [
@@ -80,10 +89,11 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
     "Select Databases",
     "Source Connection", 
     "Target Connection",
-    "Complexity Analysis",
-    "Migration Options",
+    "Validation Checks",
+    "Dry Run Analysis",
     "Field Mapping",
-    "Validation & Security",
+    "Migration Options",
+    "Security & Validation",
     "Review & Launch"
   ];
 
@@ -224,67 +234,72 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
             />
           )}
 
-          {/* Step 4: Complexity Analysis */}
+          {/* Step 4: Validation Checks */}
           {currentStep === 4 && (
             <div className="space-y-6">
               <div className="text-center mb-8">
-                <h3 className="text-xl font-semibold text-white mb-2">Pre-Migration Complexity Analysis</h3>
-                <p className="text-gray-400">Analyzing database structure and migration complexity</p>
+                <h3 className="text-xl font-semibold text-white mb-2">Database Validation Checks</h3>
+                <p className="text-gray-400">Verify source and target database compatibility</p>
               </div>
 
-              <ComplexityIndicator score={72} showDetails={true} />
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="bg-white/5 border-white/10">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-white flex items-center">
-                      <Clock className="h-5 w-5 mr-2 text-green-400" />
-                      Estimated Duration
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-green-400 mb-2">6.5h</div>
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Optimal</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white/5 border-white/10">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-white flex items-center">
-                      <AlertTriangle className="h-5 w-5 mr-2 text-orange-400" />
-                      Risk Level
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-orange-400 mb-2">Medium</div>
-                      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">Manageable</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white/5 border-white/10">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-white flex items-center">
-                      <BarChart className="h-5 w-5 mr-2 text-blue-400" />
-                      Success Rate
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-blue-400 mb-2">97.8%</div>
-                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">High Confidence</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <ValidationPanel 
+                migrationId="wizard-validation"
+                onValidationComplete={(results) => {
+                  setWizardData({...wizardData, validationResults: results});
+                  toast({
+                    title: "Validation Complete",
+                    description: "Database validation checks passed successfully.",
+                    duration: 3000,
+                  });
+                  setTimeout(() => nextStep(), 1500);
+                }}
+              />
             </div>
           )}
 
-          {/* Step 5: Migration Options */}
+          {/* Step 5: Dry Run Analysis */}
           {currentStep === 5 && (
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <h3 className="text-xl font-semibold text-white mb-2">Dry Run Analysis</h3>
+                <p className="text-gray-400">Analyze migration complexity and potential issues</p>
+              </div>
+
+              <DryRunPanel
+                migrationConfig={{
+                  name: 'Migration Preview',
+                  sourceDb: wizardData.sourceDb,
+                  targetDb: wizardData.targetDb,
+                  sourceConfig: wizardData.sourceConfig,
+                  targetConfig: wizardData.targetConfig
+                }}
+                onProceedToActualMigration={() => {
+                  setWizardData({...wizardData, dryRunResults: 'completed'});
+                  toast({
+                    title: "Dry Run Complete",
+                    description: "Analysis complete. Proceeding to field mapping.",
+                    duration: 3000,
+                  });
+                  setTimeout(() => nextStep(), 1500);
+                }}
+              />
+            </div>
+          )}
+
+          {/* Step 6: Field Mapping */}
+          {currentStep === 6 && (
+            <FieldMappingEngine
+              sourceSchema={[]}
+              targetSchema={[]}
+              onMappingComplete={(mappings) => {
+                setWizardData({...wizardData, fieldMappings: mappings});
+                nextStep();
+              }}
+            />
+          )}
+
+          {/* Step 7: Migration Options */}
+          {currentStep === 7 && (
             <div className="space-y-6">
               <div className="text-center mb-8">
                 <h3 className="text-xl font-semibold text-white mb-2">Migration Options & Strategy</h3>
@@ -384,24 +399,12 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
             </div>
           )}
 
-          {/* Step 6: Field Mapping */}
-          {currentStep === 6 && (
-            <FieldMappingEngine
-              sourceSchema={[]}
-              targetSchema={[]}
-              onMappingComplete={(mappings) => {
-                setWizardData({...wizardData, fieldMappings: mappings});
-                nextStep();
-              }}
-            />
-          )}
-
-          {/* Step 7: Validation & Security */}
-          {currentStep === 7 && (
+          {/* Step 8: Security & Validation */}
+          {currentStep === 8 && (
             <div className="space-y-6">
               <div className="text-center mb-8">
-                <h3 className="text-xl font-semibold text-white mb-2">Validation & Security Configuration</h3>
-                <p className="text-gray-400">Set up data validation rules and security protocols</p>
+                <h3 className="text-xl font-semibold text-white mb-2">Security & Validation Configuration</h3>
+                <p className="text-gray-400">Set up security protocols and final validation rules</p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -440,7 +443,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
                   <CardHeader>
                     <CardTitle className="text-white flex items-center">
                       <CheckCircle className="h-5 w-5 mr-2" />
-                      Validation Rules
+                      Final Validation Rules
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -470,8 +473,8 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
             </div>
           )}
 
-          {/* Step 8: Review & Launch */}
-          {currentStep === 8 && (
+          {/* Step 9: Review & Launch */}
+          {currentStep === 9 && (
             <div className="space-y-6">
               <div className="text-center mb-8">
                 <h3 className="text-xl font-semibold text-white mb-2">Migration Review & Launch</h3>
@@ -501,6 +504,14 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
                         <span className="text-gray-400">Field Mappings:</span>
                         <span className="text-white">{wizardData.fieldMappings.length} configured</span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Validation:</span>
+                        <span className="text-green-400">✓ Passed</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Dry Run:</span>
+                        <span className="text-green-400">✓ Completed</span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -514,7 +525,9 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
                       { check: 'Database connections', status: 'passed' },
                       { check: 'Schema compatibility', status: 'passed' },
                       { check: 'Field mappings', status: 'passed' },
-                      { check: 'Security configuration', status: 'passed' }
+                      { check: 'Security configuration', status: 'passed' },
+                      { check: 'Validation checks', status: 'passed' },
+                      { check: 'Dry run analysis', status: 'passed' }
                     ].map((item, index) => (
                       <div key={index} className="flex items-center justify-between">
                         <span className="text-white">{item.check}</span>
@@ -544,7 +557,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
           variant="outline" 
           onClick={prevStep} 
           disabled={currentStep === 1}
-          className="border-white/20 text-white hover:bg-white/10"
+          className="border-white/20 text-gray-900 bg-white hover:bg-gray-100"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Previous
@@ -553,7 +566,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
         {currentStep === totalSteps ? (
           <Button 
             onClick={onMigrationStart}
-            className="bg-white text-gray-900 font-semibold hover:bg-gray-100"
+            className="bg-green-500 hover:bg-green-600 text-white font-semibold"
           >
             <Play className="h-4 w-4 mr-2" />
             Start Migration
@@ -564,9 +577,11 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
             disabled={
               (currentStep === 1 && (!wizardData.sourceDb || !wizardData.targetDb)) ||
               (currentStep === 2 && !wizardData.sourceConfig) ||
-              (currentStep === 3 && !wizardData.targetConfig)
+              (currentStep === 3 && !wizardData.targetConfig) ||
+              (currentStep === 4 && !wizardData.validationResults) ||
+              (currentStep === 5 && !wizardData.dryRunResults)
             }
-            className="bg-white text-gray-900 font-semibold hover:bg-gray-100"
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold"
           >
             Next
             <ArrowRight className="h-4 w-4 ml-2" />

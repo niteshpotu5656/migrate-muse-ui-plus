@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -7,20 +7,19 @@ import { Progress } from '@/components/ui/progress'
 import { useToast } from "@/hooks/use-toast"
 import { 
   CheckCircle, 
+  AlertTriangle, 
   XCircle, 
-  Clock, 
-  AlertTriangle,
   Database,
   Hash,
   Key,
-  BarChart,
+  Loader2,
   Play,
-  RefreshCw,
-  Loader2
+  RotateCcw
 } from 'lucide-react'
 
 interface ValidationPanelProps {
   migrationId: string
+  onValidationComplete?: (results: any) => void
 }
 
 interface ValidationCheck {
@@ -28,243 +27,224 @@ interface ValidationCheck {
   name: string
   description: string
   status: 'pending' | 'running' | 'passed' | 'failed' | 'warning'
+  result?: string
+  details?: string
   icon: any
-  result?: {
-    expected: string | number
-    actual: string | number
-    details?: string
-  }
 }
 
-export const ValidationPanel: React.FC<ValidationPanelProps> = ({ migrationId }) => {
+export const ValidationPanel: React.FC<ValidationPanelProps> = ({ 
+  migrationId,
+  onValidationComplete 
+}) => {
   const [checks, setChecks] = useState<ValidationCheck[]>([
     {
       id: 'row_count',
       name: 'Row Count Validation',
-      description: 'Verify all rows were migrated correctly',
+      description: 'Compare row counts between source and target',
       status: 'pending',
-      icon: BarChart
+      icon: Database
     },
     {
       id: 'data_checksum',
       name: 'Data Checksum',
-      description: 'Validate data integrity using checksums',
+      description: 'Verify data integrity using checksums',
       status: 'pending',
       icon: Hash
     },
     {
       id: 'foreign_keys',
       name: 'Foreign Key Integrity',
-      description: 'Check referential integrity constraints',
+      description: 'Validate foreign key relationships',
       status: 'pending',
       icon: Key
     },
     {
       id: 'unique_constraints',
       name: 'Unique Constraints',
-      description: 'Validate unique field constraints',
+      description: 'Check unique constraint violations',
       status: 'pending',
-      icon: Database
+      icon: CheckCircle
     }
   ])
-  
+
   const [isRunning, setIsRunning] = useState(false)
-  const [currentCheck, setCurrentCheck] = useState<string | null>(null)
+  const [currentCheckIndex, setCurrentCheckIndex] = useState(-1)
+  const [overallProgress, setOverallProgress] = useState(0)
   const { toast } = useToast()
 
-  const runAllChecks = async () => {
+  const runValidation = async () => {
     setIsRunning(true)
-    
+    setCurrentCheckIndex(0)
+    setOverallProgress(0)
+
+    // Reset all checks to pending
+    setChecks(prev => prev.map(check => ({ ...check, status: 'pending' as const })))
+
+    // Simulate running each check
     for (let i = 0; i < checks.length; i++) {
-      const check = checks[i]
-      setCurrentCheck(check.id)
+      setCurrentCheckIndex(i)
       
-      // Update check to running
-      setChecks(prev => prev.map(c => 
-        c.id === check.id ? { ...c, status: 'running' as const } : c
+      // Set current check to running
+      setChecks(prev => prev.map((check, index) => 
+        index === i ? { ...check, status: 'running' as const } : check
       ))
-      
+
       // Simulate check duration
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
+      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000))
+
       // Generate mock results
-      const mockResults = generateMockResult(check.id)
+      const mockResults = generateMockResult(checks[i].id)
       
-      setChecks(prev => prev.map(c => 
-        c.id === check.id ? { ...c, ...mockResults } : c
+      setChecks(prev => prev.map((check, index) => 
+        index === i ? { 
+          ...check, 
+          status: mockResults.status,
+          result: mockResults.result,
+          details: mockResults.details
+        } : check
       ))
+
+      setOverallProgress(((i + 1) / checks.length) * 100)
     }
-    
-    setCurrentCheck(null)
+
     setIsRunning(false)
+    setCurrentCheckIndex(-1)
+
+    // Check if all validations passed
+    const finalChecks = checks.map((check, i) => {
+      const mockResults = generateMockResult(check.id)
+      return { ...check, ...mockResults }
+    })
+
+    const hasFailures = finalChecks.some(check => check.status === 'failed')
     
-    const failedChecks = checks.filter(c => c.status === 'failed').length
-    const warningChecks = checks.filter(c => c.status === 'warning').length
-    
-    if (failedChecks > 0) {
-      toast({
-        title: "Validation Issues Found",
-        description: `${failedChecks} checks failed, ${warningChecks} warnings detected.`,
-        variant: "destructive",
-        duration: 5000,
-      })
-    } else {
+    if (!hasFailures) {
       toast({
         title: "Validation Complete",
-        description: "All integrity checks passed successfully!",
-        duration: 5000,
+        description: "All validation checks passed successfully!",
+        duration: 4000,
+      })
+      onValidationComplete?.(finalChecks)
+    } else {
+      toast({
+        title: "Validation Issues Detected",
+        description: "Some validation checks failed. Please review the results.",
+        duration: 4000,
       })
     }
-  }
-
-  const runSingleCheck = async (checkId: string) => {
-    setCurrentCheck(checkId)
-    
-    setChecks(prev => prev.map(c => 
-      c.id === checkId ? { ...c, status: 'running' as const } : c
-    ))
-    
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    const mockResults = generateMockResult(checkId)
-    
-    setChecks(prev => prev.map(c => 
-      c.id === checkId ? { ...c, ...mockResults } : c
-    ))
-    
-    setCurrentCheck(null)
   }
 
   const generateMockResult = (checkId: string) => {
-    const rand = Math.random()
+    const random = Math.random()
     
     switch (checkId) {
       case 'row_count':
-        if (rand > 0.8) {
+        if (random > 0.8) {
           return {
             status: 'failed' as const,
-            result: {
-              expected: 15420,
-              actual: 15418,
-              details: '2 rows missing in target database'
-            }
-          }
-        } else if (rand > 0.6) {
-          return {
-            status: 'warning' as const,
-            result: {
-              expected: 15420,
-              actual: 15420,
-              details: 'Row counts match but some empty rows detected'
-            }
+            result: 'Mismatch detected',
+            details: 'Source: 1,234 rows | Target: 1,235 rows'
           }
         }
         return {
           status: 'passed' as const,
-          result: {
-            expected: 15420,
-            actual: 15420,
-            details: 'All rows migrated successfully'
-          }
+          result: 'Counts match',
+          details: 'Source: 1,234 rows | Target: 1,234 rows'
         }
       
       case 'data_checksum':
-        if (rand > 0.85) {
+        if (random > 0.9) {
           return {
             status: 'failed' as const,
-            result: {
-              expected: 'SHA256:a1b2c3d4',
-              actual: 'SHA256:a1b2c3d5',
-              details: 'Data corruption detected in products table'
-            }
+            result: 'Checksum mismatch',
+            details: 'Hash validation failed for 3 records'
           }
         }
         return {
           status: 'passed' as const,
-          result: {
-            expected: 'SHA256:a1b2c3d4',
-            actual: 'SHA256:a1b2c3d4',
-            details: 'Data integrity verified across all tables'
-          }
+          result: 'Checksums valid',
+          details: 'MD5: a1b2c3d4e5f6... | All records verified'
         }
       
       case 'foreign_keys':
-        if (rand > 0.9) {
-          return {
-            status: 'failed' as const,
-            result: {
-              expected: '0 violations',
-              actual: '3 violations',
-              details: 'Orphaned records found in orders table'
-            }
-          }
-        } else if (rand > 0.7) {
+        if (random > 0.85) {
           return {
             status: 'warning' as const,
-            result: {
-              expected: '0 violations',
-              actual: '0 violations',
-              details: 'Some FK constraints were modified during migration'
-            }
+            result: 'Some constraints missing',
+            details: '2 foreign key constraints not found in target'
           }
         }
         return {
           status: 'passed' as const,
-          result: {
-            expected: '0 violations',
-            actual: '0 violations',
-            details: 'All foreign key relationships maintained'
-          }
+          result: 'All constraints valid',
+          details: '47 foreign key relationships verified'
         }
       
       case 'unique_constraints':
-        if (rand > 0.85) {
+        if (random > 0.9) {
           return {
             status: 'failed' as const,
-            result: {
-              expected: '0 duplicates',
-              actual: '2 duplicates',
-              details: 'Duplicate email addresses found'
-            }
+            result: 'Duplicate entries found',
+            details: '5 duplicate records in users.email field'
           }
         }
         return {
           status: 'passed' as const,
-          result: {
-            expected: '0 duplicates',
-            actual: '0 duplicates',
-            details: 'All unique constraints satisfied'
-          }
+          result: 'No duplicates found',
+          details: 'All unique constraints satisfied'
         }
       
       default:
-        return { status: 'passed' as const }
+        return {
+          status: 'passed' as const,
+          result: 'Check completed',
+          details: 'Validation successful'
+        }
     }
   }
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: ValidationCheck['status']) => {
     switch (status) {
-      case 'passed': return <CheckCircle className="h-5 w-5 text-green-400" />
-      case 'failed': return <XCircle className="h-5 w-5 text-red-400" />
-      case 'warning': return <AlertTriangle className="h-5 w-5 text-yellow-400" />
-      case 'running': return <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
-      default: return <Clock className="h-5 w-5 text-gray-400" />
+      case 'running':
+        return <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
+      case 'passed':
+        return <CheckCircle className="h-5 w-5 text-green-400" />
+      case 'failed':
+        return <XCircle className="h-5 w-5 text-red-400" />
+      case 'warning':
+        return <AlertTriangle className="h-5 w-5 text-yellow-400" />
+      default:
+        return <div className="h-5 w-5 rounded-full border-2 border-gray-400" />
     }
   }
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: ValidationCheck['status']) => {
     switch (status) {
-      case 'passed': return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Passed</Badge>
-      case 'failed': return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Failed</Badge>
-      case 'warning': return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Warning</Badge>
-      case 'running': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Running</Badge>
-      default: return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">Pending</Badge>
+      case 'running':
+        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Running</Badge>
+      case 'passed':
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Passed</Badge>
+      case 'failed':
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Failed</Badge>
+      case 'warning':
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Warning</Badge>
+      default:
+        return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">Pending</Badge>
     }
   }
 
-  const passedChecks = checks.filter(c => c.status === 'passed').length
-  const totalChecks = checks.length
-  const completedChecks = checks.filter(c => c.status !== 'pending').length
+  const resetValidation = () => {
+    setChecks(prev => prev.map(check => ({ 
+      ...check, 
+      status: 'pending' as const,
+      result: undefined,
+      details: undefined
+    })))
+    setOverallProgress(0)
+    setCurrentCheckIndex(-1)
+  }
+
+  const hasAnyResults = checks.some(check => check.status !== 'pending')
 
   return (
     <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
@@ -272,17 +252,25 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({ migrationId })
         <div className="flex items-center justify-between">
           <CardTitle className="text-white flex items-center">
             <Database className="h-5 w-5 mr-2" />
-            Data Validation & Integrity Checks
+            Validation Checks
           </CardTitle>
           <div className="flex items-center space-x-2">
-            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-              {completedChecks}/{totalChecks} Complete
-            </Badge>
+            {hasAnyResults && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={resetValidation}
+                disabled={isRunning}
+                className="border-white/20 text-gray-900 bg-white hover:bg-gray-100"
+              >
+                <RotateCcw className="h-3 w-3 mr-1" />
+                Reset
+              </Button>
+            )}
             <Button
-              onClick={runAllChecks}
+              onClick={runValidation}
               disabled={isRunning}
-              size="sm"
-              className="bg-white text-gray-900 font-semibold hover:bg-gray-100"
+              className="bg-blue-500 hover:bg-blue-600 text-white"
             >
               {isRunning ? (
                 <>
@@ -300,60 +288,51 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({ migrationId })
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Progress Overview */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-gray-300">
-            <span>Validation Progress</span>
-            <span>{Math.round((completedChecks / totalChecks) * 100)}%</span>
+        {isRunning && (
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm text-gray-300">
+              <span>Overall Progress</span>
+              <span>{Math.round(overallProgress)}%</span>
+            </div>
+            <Progress value={overallProgress} className="h-2" />
           </div>
-          <Progress value={(completedChecks / totalChecks) * 100} className="h-2" />
-        </div>
+        )}
 
-        {/* Individual Checks */}
         <div className="space-y-4">
-          {checks.map((check) => {
+          {checks.map((check, index) => {
             const Icon = check.icon
+            const isCurrentCheck = currentCheckIndex === index
+            
             return (
-              <div key={check.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+              <div 
+                key={check.id} 
+                className={`p-4 rounded-lg border transition-all duration-200 ${
+                  isCurrentCheck 
+                    ? 'bg-blue-500/10 border-blue-500/30 ring-1 ring-blue-500/50' 
+                    : 'bg-white/5 border-white/10'
+                }`}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
-                    <Icon className="h-6 w-6 text-blue-400" />
+                    <Icon className="h-5 w-5 text-gray-400" />
                     <div>
                       <h4 className="text-white font-medium">{check.name}</h4>
                       <p className="text-gray-400 text-sm">{check.description}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    {getStatusIcon(check.status)}
                     {getStatusBadge(check.status)}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => runSingleCheck(check.id)}
-                      disabled={isRunning || check.status === 'running'}
-                      className="border-white/20 text-white hover:bg-white/10"
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                    </Button>
+                    {getStatusIcon(check.status)}
                   </div>
                 </div>
-                
+
                 {check.result && (
                   <div className="mt-3 p-3 bg-black/20 rounded border border-white/10">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-400">Expected:</span>
-                        <div className="text-white font-mono">{check.result.expected}</div>
-                      </div>
-                      <div>
-                        <span className="text-gray-400">Actual:</span>
-                        <div className="text-white font-mono">{check.result.actual}</div>
-                      </div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-white font-medium">{check.result}</span>
                     </div>
-                    {check.result.details && (
-                      <div className="mt-2 text-sm text-gray-300">
-                        {check.result.details}
-                      </div>
+                    {check.details && (
+                      <p className="text-gray-400 text-sm">{check.details}</p>
                     )}
                   </div>
                 )}
@@ -362,22 +341,20 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({ migrationId })
           })}
         </div>
 
-        {/* Summary */}
-        {completedChecks > 0 && (
+        {hasAnyResults && !isRunning && (
           <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-            <h4 className="text-white font-medium mb-2">Validation Summary</h4>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-green-400">{checks.filter(c => c.status === 'passed').length}</div>
-                <div className="text-sm text-gray-400">Passed</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-yellow-400">{checks.filter(c => c.status === 'warning').length}</div>
-                <div className="text-sm text-gray-400">Warnings</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-red-400">{checks.filter(c => c.status === 'failed').length}</div>
-                <div className="text-sm text-gray-400">Failed</div>
+            <div className="flex items-center justify-between">
+              <span className="text-white">Validation Summary</span>
+              <div className="flex space-x-2">
+                <span className="text-green-400">
+                  {checks.filter(c => c.status === 'passed').length} Passed
+                </span>
+                <span className="text-yellow-400">
+                  {checks.filter(c => c.status === 'warning').length} Warnings
+                </span>
+                <span className="text-red-400">
+                  {checks.filter(c => c.status === 'failed').length} Failed
+                </span>
               </div>
             </div>
           </div>

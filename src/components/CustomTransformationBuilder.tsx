@@ -1,249 +1,237 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+
+import React, { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { useToast } from "@/hooks/use-toast"
 import { 
-  Code, 
   Plus, 
-  Trash2, 
-  Wand2, 
-  ArrowRight,
-  Type,
-  Split,
-  Merge,
-  Hash
-} from 'lucide-react';
+  Scissors, 
+  Merge, 
+  Type, 
+  Code, 
+  Trash2,
+  Settings,
+  Wand2,
+  CheckCircle
+} from 'lucide-react'
 
 interface TransformationRule {
-  id: string;
-  type: 'split' | 'merge' | 'cast' | 'json_extract' | 'custom';
-  name: string;
-  sourceFields: string[];
-  targetField: string;
-  parameters: Record<string, any>;
-  script?: string;
+  id: string
+  type: 'split' | 'merge' | 'cast' | 'json' | 'truncate' | 'format'
+  sourceField: string
+  targetField: string
+  parameters: any
+  description: string
 }
 
 interface CustomTransformationBuilderProps {
-  onRulesChange: (rules: TransformationRule[]) => void;
+  onRulesChange?: (rules: TransformationRule[]) => void
 }
 
 export const CustomTransformationBuilder: React.FC<CustomTransformationBuilderProps> = ({ 
   onRulesChange 
 }) => {
-  const [rules, setRules] = useState<TransformationRule[]>([]);
-  const [selectedRuleType, setSelectedRuleType] = useState<string>('');
-  const [newRuleName, setNewRuleName] = useState('');
+  const [rules, setRules] = useState<TransformationRule[]>([])
+  const [newRuleType, setNewRuleType] = useState<string>('')
+  const [isAddingRule, setIsAddingRule] = useState(false)
+  const { toast } = useToast()
 
-  const transformationTypes = [
-    { id: 'split', name: 'Split Field', icon: Split, description: 'Split a field into multiple parts' },
-    { id: 'merge', name: 'Merge Fields', icon: Merge, description: 'Combine multiple fields' },
-    { id: 'cast', name: 'Type Casting', icon: Type, description: 'Convert data types' },
-    { id: 'json_extract', name: 'JSON Extract', icon: Hash, description: 'Extract from JSON fields' },
-    { id: 'custom', name: 'Custom Script', icon: Code, description: 'Custom transformation logic' }
-  ];
+  // ✅ Mock field options for demonstrations
+  const mockFields = [
+    'users.full_name', 'users.email', 'users.created_at',
+    'orders.order_date', 'orders.customer_id', 'orders.total_amount',
+    'products.name', 'products.description', 'products.metadata'
+  ]
 
-  const addRule = () => {
-    if (!selectedRuleType || !newRuleName) return;
+  const ruleTypes = [
+    {
+      type: 'split',
+      label: 'Split Field',
+      icon: Scissors,
+      description: 'Split a single field into multiple fields',
+      example: 'Split full_name into first_name, last_name'
+    },
+    {
+      type: 'merge',
+      label: 'Merge Fields', 
+      icon: Merge,
+      description: 'Combine multiple fields into one',
+      example: 'Merge first_name + last_name into full_name'
+    },
+    {
+      type: 'cast',
+      label: 'Type Conversion',
+      icon: Type,
+      description: 'Convert field data type',
+      example: 'Convert VARCHAR to INTEGER'
+    },
+    {
+      type: 'json',
+      label: 'JSON Transform',
+      icon: Code,
+      description: 'Extract or transform JSON data',
+      example: 'Extract metadata.category from JSON'
+    }
+  ]
 
+  const addRule = (type: string) => {
+    const ruleType = ruleTypes.find(rt => rt.type === type)
+    if (!ruleType) return
+
+    // ✅ Generate realistic rule based on type
     const newRule: TransformationRule = {
       id: `rule_${Date.now()}`,
-      type: selectedRuleType as any,
-      name: newRuleName,
-      sourceFields: [''],
-      targetField: '',
-      parameters: {},
-      script: selectedRuleType === 'custom' ? '// Enter your transformation code here' : undefined
-    };
-
-    const updatedRules = [...rules, newRule];
-    setRules(updatedRules);
-    onRulesChange(updatedRules);
-    setSelectedRuleType('');
-    setNewRuleName('');
-  };
-
-  const updateRule = (id: string, updates: Partial<TransformationRule>) => {
-    const updatedRules = rules.map(rule => 
-      rule.id === id ? { ...rule, ...updates } : rule
-    );
-    setRules(updatedRules);
-    onRulesChange(updatedRules);
-  };
-
-  const removeRule = (id: string) => {
-    const updatedRules = rules.filter(rule => rule.id !== id);
-    setRules(updatedRules);
-    onRulesChange(updatedRules);
-  };
-
-  const getParametersUI = (rule: TransformationRule) => {
-    switch (rule.type) {
-      case 'split':
-        return (
-          <div className="space-y-2">
-            <Label className="text-white text-sm">Delimiter</Label>
-            <Input
-              placeholder="e.g., space, comma, |"
-              value={rule.parameters.delimiter || ''}
-              onChange={(e) => updateRule(rule.id, { 
-                parameters: { ...rule.parameters, delimiter: e.target.value }
-              })}
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-            />
-          </div>
-        );
-      case 'merge':
-        return (
-          <div className="space-y-2">
-            <Label className="text-white text-sm">Separator</Label>
-            <Input
-              placeholder="e.g., space, underscore"
-              value={rule.parameters.separator || ''}
-              onChange={(e) => updateRule(rule.id, { 
-                parameters: { ...rule.parameters, separator: e.target.value }
-              })}
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-            />
-          </div>
-        );
-      case 'cast':
-        return (
-          <div className="space-y-2">
-            <Label className="text-white text-sm">Target Type</Label>
-            <Select 
-              value={rule.parameters.targetType || ''} 
-              onValueChange={(value) => updateRule(rule.id, { 
-                parameters: { ...rule.parameters, targetType: value }
-              })}
-            >
-              <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select target type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="integer">Integer</SelectItem>
-                <SelectItem value="float">Float</SelectItem>
-                <SelectItem value="string">String</SelectItem>
-                <SelectItem value="boolean">Boolean</SelectItem>
-                <SelectItem value="date">Date</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        );
-      case 'json_extract':
-        return (
-          <div className="space-y-2">
-            <Label className="text-white text-sm">JSON Path</Label>
-            <Input
-              placeholder="e.g., $.user.name"
-              value={rule.parameters.jsonPath || ''}
-              onChange={(e) => updateRule(rule.id, { 
-                parameters: { ...rule.parameters, jsonPath: e.target.value }
-              })}
-              className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-            />
-          </div>
-        );
-      default:
-        return null;
+      type: type as any,
+      sourceField: mockFields[Math.floor(Math.random() * mockFields.length)],
+      targetField: `target_${type}_field`,
+      parameters: generateRuleParameters(type),
+      description: generateRuleDescription(type)
     }
-  };
+
+    const updatedRules = [...rules, newRule]
+    setRules(updatedRules)
+    onRulesChange?.(updatedRules)
+    setIsAddingRule(false)
+
+    toast({
+      title: "✅ Transformation Rule Added",
+      description: `${ruleType.label} rule created successfully`,
+    })
+  }
+
+  // ✅ Generate realistic parameters for each rule type
+  const generateRuleParameters = (type: string) => {
+    switch (type) {
+      case 'split':
+        return { delimiter: ' ', outputFields: ['first_name', 'last_name'] }
+      case 'merge':
+        return { separator: ' ', inputFields: ['first_name', 'last_name'] }
+      case 'cast':
+        return { fromType: 'VARCHAR', toType: 'INTEGER', nullable: true }
+      case 'json':
+        return { jsonPath: '$.category', defaultValue: 'unknown' }
+      default:
+        return {}
+    }
+  }
+
+  const generateRuleDescription = (type: string) => {
+    switch (type) {
+      case 'split':
+        return 'Split full_name field using space delimiter into first_name and last_name'
+      case 'merge':
+        return 'Merge first_name and last_name fields with space separator'
+      case 'cast':
+        return 'Convert string field to integer with null handling'
+      case 'json':
+        return 'Extract category value from JSON metadata field'
+      default:
+        return 'Custom transformation rule'
+    }
+  }
+
+  const removeRule = (ruleId: string) => {
+    const updatedRules = rules.filter(rule => rule.id !== ruleId)
+    setRules(updatedRules)
+    onRulesChange?.(updatedRules)
+
+    toast({
+      title: "🗑️ Rule Removed",
+      description: "Transformation rule deleted successfully",
+    })
+  }
+
+  const getRuleIcon = (type: string) => {
+    const ruleType = ruleTypes.find(rt => rt.type === type)
+    return ruleType?.icon || Settings
+  }
+
+  const getRuleColor = (type: string) => {
+    switch (type) {
+      case 'split': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+      case 'merge': return 'bg-green-500/20 text-green-400 border-green-500/30'
+      case 'cast': return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+      case 'json': return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+    }
+  }
 
   return (
-    <div className="space-y-6">
-      <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
-        <CardHeader>
+    <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
+      <CardHeader>
+        <div className="flex items-center justify-between">
           <CardTitle className="text-white flex items-center">
             <Wand2 className="h-5 w-5 mr-2" />
-            Custom Transformation Builder
+            🧩 Custom Transformation Rules
           </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Add New Rule */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div className="space-y-2">
-              <Label className="text-white">Transformation Type</Label>
-              <Select value={selectedRuleType} onValueChange={setSelectedRuleType}>
-                <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                  <SelectValue placeholder="Select transformation" />
-                </SelectTrigger>
-                <SelectContent>
-                  {transformationTypes.map((type) => (
-                    <SelectItem key={type.id} value={type.id}>
-                      <div className="flex items-center space-x-2">
-                        <type.icon className="h-4 w-4" />
-                        <span>{type.name}</span>
+          <Dialog open={isAddingRule} onOpenChange={setIsAddingRule}>
+            <DialogTrigger asChild>
+              <Button className="bg-purple-500 hover:bg-purple-600 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Rule
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-gray-900 border-white/20 text-white">
+              <DialogHeader>
+                <DialogTitle>Create Transformation Rule</DialogTitle>
+                <DialogDescription className="text-gray-400">
+                  Choose a transformation type to create a new rule
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-1 gap-4 py-4">
+                {ruleTypes.map((ruleType) => {
+                  const Icon = ruleType.icon
+                  return (
+                    <div
+                      key={ruleType.type}
+                      onClick={() => addRule(ruleType.type)}
+                      className="p-4 bg-white/5 border border-white/10 rounded-lg cursor-pointer hover:bg-white/10 transition-colors"
+                    >
+                      <div className="flex items-center space-x-3 mb-2">
+                        <Icon className="h-5 w-5 text-blue-400" />
+                        <h4 className="text-white font-medium">{ruleType.label}</h4>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-white">Rule Name</Label>
-              <Input
-                placeholder="Enter rule name"
-                value={newRuleName}
-                onChange={(e) => setNewRuleName(e.target.value)}
-                className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-              />
-            </div>
-
-            <Button 
-              onClick={addRule}
-              disabled={!selectedRuleType || !newRuleName}
-              className="bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
-            >
+                      <p className="text-gray-400 text-sm mb-1">{ruleType.description}</p>
+                      <p className="text-gray-500 text-xs italic">{ruleType.example}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {rules.length === 0 ? (
+          <div className="text-center py-8">
+            <Wand2 className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-white mb-2">🎨 No Transformation Rules</h3>
+            <p className="text-gray-400 mb-4">
+              Add custom transformation rules to modify how your data is migrated
+            </p>
+            <Button onClick={() => setIsAddingRule(true)} className="bg-blue-500 hover:bg-blue-600 text-white">
               <Plus className="h-4 w-4 mr-2" />
-              Add Rule
+              Create Your First Rule
             </Button>
           </div>
-
-          {/* Rule Type Descriptions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {transformationTypes.map((type) => {
-              const Icon = type.icon;
-              return (
-                <div key={type.id} className="p-3 bg-white/5 rounded-lg border border-white/10">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Icon className="h-4 w-4 text-blue-400" />
-                    <span className="text-white font-medium text-sm">{type.name}</span>
-                  </div>
-                  <p className="text-gray-400 text-xs">{type.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Existing Rules */}
-      {rules.length > 0 && (
-        <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
-          <CardHeader>
-            <CardTitle className="text-white">Active Transformation Rules ({rules.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        ) : (
+          <div className="space-y-4">
             {rules.map((rule) => {
-              const ruleType = transformationTypes.find(t => t.id === rule.type);
-              const Icon = ruleType?.icon || Code;
-              
+              const Icon = getRuleIcon(rule.type)
               return (
-                <div key={rule.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
-                  <div className="flex items-center justify-between mb-4">
+                <div key={rule.id} className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       <Icon className="h-5 w-5 text-blue-400" />
-                      <div>
-                        <h4 className="text-white font-medium">{rule.name}</h4>
-                        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
-                          {ruleType?.name}
-                        </Badge>
-                      </div>
+                      <Badge className={getRuleColor(rule.type)}>
+                        {rule.type.toUpperCase()}
+                      </Badge>
+                      <span className="text-white font-medium">{rule.sourceField}</span>
+                      <span className="text-gray-400">→</span>
+                      <span className="text-white font-medium">{rule.targetField}</span>
                     </div>
                     <Button
                       size="sm"
@@ -254,56 +242,30 @@ export const CustomTransformationBuilder: React.FC<CustomTransformationBuilderPr
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-white text-sm">Source Field(s)</Label>
-                      <Input
-                        placeholder="field1, field2"
-                        value={rule.sourceFields.join(', ')}
-                        onChange={(e) => updateRule(rule.id, { 
-                          sourceFields: e.target.value.split(',').map(f => f.trim()) 
-                        })}
-                        className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-white text-sm">Target Field</Label>
-                      <Input
-                        placeholder="target_field"
-                        value={rule.targetField}
-                        onChange={(e) => updateRule(rule.id, { targetField: e.target.value })}
-                        className="bg-white/10 border-white/20 text-white placeholder-gray-400"
-                      />
-                    </div>
-
-                    <div>{getParametersUI(rule)}</div>
-                  </div>
-
-                  {rule.type === 'custom' && (
-                    <div className="mt-4 space-y-2">
-                      <Label className="text-white text-sm">Custom Script</Label>
-                      <Textarea
-                        placeholder="// Enter your transformation code here"
-                        value={rule.script || ''}
-                        onChange={(e) => updateRule(rule.id, { script: e.target.value })}
-                        className="bg-white/10 border-white/20 text-white placeholder-gray-400 font-mono"
-                        rows={4}
-                      />
-                    </div>
-                  )}
-
-                  {/* Preview */}
-                  <div className="mt-3 p-2 bg-black/20 rounded text-xs font-mono text-gray-300">
-                    Preview: {rule.sourceFields.join(' + ')} <ArrowRight className="inline h-3 w-3 mx-1" /> {rule.targetField || 'output'}
+                  <p className="text-gray-300 text-sm mb-2">{rule.description}</p>
+                  <div className="text-xs text-gray-400">
+                    Parameters: {JSON.stringify(rule.parameters)}
                   </div>
                 </div>
-              );
+              )
             })}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-};
+          </div>
+        )}
+
+        {rules.length > 0 && (
+          <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <CheckCircle className="h-5 w-5 text-green-400" />
+              <span className="text-green-400 font-medium">
+                ✅ {rules.length} Transformation Rules Configured
+              </span>
+            </div>
+            <p className="text-gray-300 text-sm">
+              🎯 Rules will be applied during migration to transform your data according to the specified logic.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}

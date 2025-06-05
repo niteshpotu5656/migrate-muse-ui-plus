@@ -86,7 +86,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
       description: "Running comprehensive database validation checks...",
     });
 
-    // Simulate running each check
+    // ✅ Simulate running each check with realistic results
     for (let i = 0; i < checks.length; i++) {
       setCurrentCheckIndex(i)
       
@@ -96,10 +96,10 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
       ))
 
       // Simulate check duration
-      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000))
+      await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000))
 
-      // Generate mock results
-      const mockResults = generateMockResult(checks[i].id)
+      // ✅ Generate realistic mock results
+      const mockResults = generateMockResult(checks[i].id, i)
       
       setChecks(prev => prev.map((check, index) => 
         index === i ? { 
@@ -111,6 +111,13 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
       ))
 
       setOverallProgress(((i + 1) / checks.length) * 100)
+      
+      // ✅ Show progress toast for each check
+      toast({
+        title: `✅ ${checks[i].name} Complete`,
+        description: mockResults.result,
+        duration: 2000,
+      });
     }
 
     setIsRunning(false)
@@ -118,7 +125,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
 
     // Check if all validations passed
     const finalChecks = checks.map((check, i) => {
-      const mockResults = generateMockResult(check.id)
+      const mockResults = generateMockResult(check.id, i)
       return { ...check, ...mockResults }
     })
 
@@ -126,86 +133,89 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
     
     if (!hasFailures) {
       toast({
-        title: "✅ Validation Complete",
-        description: "All validation checks passed successfully! Ready to proceed.",
+        title: "✅ All Validation Checks Passed",
+        description: "Database validation completed successfully! Ready to proceed.",
         duration: 4000,
       })
       onValidationComplete?.(finalChecks)
     } else {
       toast({
-        title: "⚠️ Validation Issues Detected",
+        title: "❌ Validation Issues Detected",
         description: "Some validation checks failed. Please review the results.",
         variant: "destructive",
         duration: 4000,
       })
+      onValidationComplete?.(finalChecks)
     }
   }
 
-  const generateMockResult = (checkId: string) => {
+  // ✅ Generate realistic validation results
+  const generateMockResult = (checkId: string, index: number) => {
+    // Make most checks pass, but occasionally show realistic failures
     const random = Math.random()
     
     switch (checkId) {
       case 'row_count':
-        if (random > 0.8) {
+        if (random > 0.85) {
           return {
             status: 'failed' as const,
-            result: '❌ Mismatch detected',
-            details: 'Source: 1,234 rows | Target: 1,235 rows (1 row difference)'
+            result: '❌ Row count mismatch detected',
+            details: 'Source: 125,234 rows | Target: 125,235 rows (1 row difference in users table)'
           }
         }
         return {
           status: 'passed' as const,
-          result: '✅ Counts match perfectly',
-          details: 'Source: 1,234 rows | Target: 1,234 rows'
+          result: '✅ Row counts match perfectly',
+          details: 'Source: 125,234 rows | Target: 125,234 rows across all 12 tables'
         }
       
       case 'data_checksum':
         if (random > 0.9) {
           return {
             status: 'failed' as const,
-            result: '❌ Checksum mismatch',
-            details: 'Hash validation failed for 3 records in users table'
+            result: '❌ Data checksum mismatch',
+            details: 'Hash validation failed for 3 records in orders table - possible data corruption'
           }
         }
         return {
           status: 'passed' as const,
-          result: '✅ All checksums valid',
-          details: 'MD5: a1b2c3d4e5f6... | All 1,234 records verified'
+          result: '✅ All data checksums valid',
+          details: 'MD5: a1b2c3d4e5f6789... | SHA256 verified for all 125,234 records'
         }
       
       case 'foreign_keys':
-        if (random > 0.85) {
+        if (random > 0.8) {
           return {
             status: 'warning' as const,
-            result: '⚠️ Some constraints missing',
-            details: '2 foreign key constraints not found in target schema'
+            result: '⚠️ Foreign key constraints missing',
+            details: '2 foreign key relationships not found in target schema (users.company_id, orders.customer_id)'
           }
         }
         return {
           status: 'passed' as const,
-          result: '✅ All constraints valid',
-          details: '47 foreign key relationships verified successfully'
+          result: '✅ All foreign key integrity maintained',
+          details: '47 foreign key relationships verified successfully across all tables'
         }
       
       case 'unique_constraints':
-        if (random > 0.9) {
+        if (random > 0.88) {
           return {
             status: 'failed' as const,
-            result: '❌ Duplicate entries found',
-            details: '5 duplicate records in users.email field'
+            result: '❌ Unique constraint violations',
+            details: '5 duplicate entries found in users.email field, 2 in products.sku field'
           }
         }
         return {
           status: 'passed' as const,
-          result: '✅ No duplicates found',
-          details: 'All unique constraints satisfied across all tables'
+          result: '✅ No unique constraint violations',
+          details: 'All unique constraints satisfied across all tables (23 constraints checked)'
         }
       
       default:
         return {
           status: 'passed' as const,
-          result: '✅ Check completed',
-          details: 'Validation successful'
+          result: '✅ Validation check completed',
+          details: 'All criteria met successfully'
         }
     }
   }
@@ -252,7 +262,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
     
     toast({
       title: "🔄 Validation Reset",
-      description: "All checks have been reset to pending state.",
+      description: "All validation checks have been reset to pending state.",
     });
   }
 
@@ -264,7 +274,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-white flex items-center">
             <Database className="h-5 w-5 mr-2" />
-            Validation Checks
+            🔍 Database Validation Checks
           </CardTitle>
           <div className="flex items-center space-x-2">
             {hasAnyResults && (
@@ -273,7 +283,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
                 variant="outline"
                 onClick={resetValidation}
                 disabled={isRunning}
-                className="border-white/20 text-gray-800 bg-white hover:bg-gray-100"
+                className="border-white/20 text-gray-900 bg-white hover:bg-gray-100"
               >
                 <RotateCcw className="h-3 w-3 mr-1" />
                 Reset
@@ -287,7 +297,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
               {isRunning ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Running...
+                  Running Checks...
                 </>
               ) : (
                 <>
@@ -303,8 +313,8 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
         {isRunning && (
           <div className="space-y-3">
             <div className="flex justify-between text-sm text-gray-300">
-              <span>Overall Progress</span>
-              <span>{Math.round(overallProgress)}%</span>
+              <span>⏳ Validation Progress</span>
+              <span>{Math.round(overallProgress)}% Complete</span>
             </div>
             <Progress value={overallProgress} className="h-2" />
           </div>
@@ -356,15 +366,15 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
         {hasAnyResults && !isRunning && (
           <div className="p-4 bg-white/5 rounded-lg border border-white/10">
             <div className="flex items-center justify-between">
-              <span className="text-white">Validation Summary</span>
-              <div className="flex space-x-2">
-                <span className="text-green-400">
+              <span className="text-white font-medium">📊 Validation Summary</span>
+              <div className="flex space-x-3">
+                <span className="text-green-400 text-sm">
                   ✅ {checks.filter(c => c.status === 'passed').length} Passed
                 </span>
-                <span className="text-yellow-400">
+                <span className="text-yellow-400 text-sm">
                   ⚠️ {checks.filter(c => c.status === 'warning').length} Warnings
                 </span>
-                <span className="text-red-400">
+                <span className="text-red-400 text-sm">
                   ❌ {checks.filter(c => c.status === 'failed').length} Failed
                 </span>
               </div>

@@ -52,49 +52,66 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
     setProgress(0)
     
     toast({
-      title: "🔄 Dry Run Started",
+      title: "🔄 Dry Run Analysis Started",
       description: "Analyzing migration complexity and potential issues...",
     });
 
-    // Simulate progress updates
+    // ✅ Simulate realistic progress updates
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(progressInterval)
           return 100
         }
-        return prev + Math.random() * 15
+        return prev + Math.random() * 12 + 3 // Realistic progress increments
       })
-    }, 200)
+    }, 300)
 
-    // Simulate analysis delay
-    await new Promise(resolve => setTimeout(resolve, 3000))
-    
-    // Generate mock results
+    // ✅ Simulate analysis with multiple steps
+    const analysisSteps = [
+      "📊 Analyzing source schema structure...",
+      "🔍 Detecting field type compatibility...", 
+      "⚡ Calculating performance metrics...",
+      "🧩 Evaluating transformation complexity...",
+      "📈 Generating optimization recommendations..."
+    ];
+
+    for (let i = 0; i < analysisSteps.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      toast({
+        title: analysisSteps[i],
+        description: `Step ${i + 1} of ${analysisSteps.length}`,
+        duration: 1500,
+      });
+    }
+
+    // ✅ Generate realistic mock results
     const mockResult: DryRunResult = {
-      complexityScore: Math.floor(Math.random() * 40) + 30, // 30-70 range
-      estimatedTime: `${Math.floor(Math.random() * 8) + 2} minutes ${Math.floor(Math.random() * 60)} seconds`,
+      complexityScore: Math.floor(Math.random() * 40) + 35, // 35-75 range for realism
+      estimatedTime: `${Math.floor(Math.random() * 6) + 3} minutes ${Math.floor(Math.random() * 60)} seconds`,
       recommendations: [
-        "📊 Consider increasing batch size to 15,000 rows for better performance",
-        "⚡ Enable parallel processing for tables larger than 50,000 rows",
-        "🔍 Review JSON field mappings for potential data loss",
-        "📇 Add indexes on foreign key columns before migration",
-        "🔐 Enable connection pooling to improve database throughput"
-      ].slice(0, Math.floor(Math.random() * 3) + 2),
+        "📊 Increase batch size to 15,000 rows for optimal performance (+23% speed)",
+        "⚡ Enable parallel processing for tables >50,000 rows (+40% faster)",
+        "🔍 Add validation checks for JSON field transformations",
+        "📇 Create indexes on foreign key columns before migration",
+        "🔐 Enable connection pooling (recommended: 20 connections)"
+      ].slice(0, Math.floor(Math.random() * 3) + 3),
       fieldMismatches: [
-        { table: "users", source: "created_at (DATETIME)", target: "created_timestamp (TIMESTAMP)", issue: "⚠️ Type conversion required" },
+        { table: "users", source: "created_at (DATETIME)", target: "created_timestamp (TIMESTAMP)", issue: "⚠️ Date format conversion required" },
         { table: "orders", source: "status (ENUM)", target: "order_status (TEXT)", issue: "🔄 Enum values need mapping" },
-        { table: "products", source: "metadata (JSON)", target: "product_data (JSONB)", issue: "📝 JSON format migration" },
-        { table: "customers", source: "phone (VARCHAR)", target: "contact_phone (TEXT)", issue: "✅ Safe string conversion" }
-      ],
+        { table: "products", source: "metadata (JSON)", target: "product_data (JSONB)", issue: "📝 JSON structure migration" },
+        { table: "customers", source: "phone_number (VARCHAR)", target: "contact_phone (TEXT)", issue: "✅ Safe string conversion" },
+        { table: "payments", source: "amount (DECIMAL)", target: "payment_amount (FLOAT)", issue: "⚠️ Precision loss possible" }
+      ].slice(0, Math.floor(Math.random() * 3) + 2),
       summaryLogs: [
-        "✅ Source database connection verified",
-        "✅ Target database schema analyzed",
-        "⚠️ 4 field type mismatches detected",
-        "✅ Foreign key relationships mapped",
-        "✅ Index requirements calculated",
-        "📊 Performance optimization suggestions generated",
-        "🔍 Data integrity checks completed"
+        "✅ Source database connection verified (PostgreSQL 14.2)",
+        "✅ Target database schema analyzed (MongoDB 5.0)",
+        "⚠️ 4 field type mismatches detected requiring attention",
+        "✅ Foreign key relationships mapped (47 constraints found)",
+        "✅ Index requirements calculated (12 indexes recommended)",
+        "📊 Performance baseline established (current: 8.2k rows/sec)",
+        "🔍 Data integrity validation rules configured",
+        "💡 3 optimization opportunities identified"
       ]
     }
     
@@ -103,24 +120,24 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
     clearInterval(progressInterval)
     setProgress(100)
 
-    const complexityLevel = mockResult.complexityScore < 40 ? "Low" : mockResult.complexityScore < 70 ? "Medium" : "High";
+    const complexityLevel = mockResult.complexityScore < 40 ? "Low" : mockResult.complexityScore < 65 ? "Medium" : "High";
     
     toast({
-      title: "✅ Dry Run Complete",
-      description: `Migration complexity: ${complexityLevel} (${mockResult.complexityScore}%). Review recommendations before proceeding.`,
+      title: "✅ Dry Run Analysis Complete",
+      description: `Migration complexity: ${complexityLevel} (${mockResult.complexityScore}/100). Review recommendations before proceeding.`,
       duration: 5000,
     })
   }
 
   const getComplexityColor = (score: number) => {
     if (score < 40) return 'text-green-400 bg-green-500/20 border-green-500/30'
-    if (score < 70) return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30'
+    if (score < 65) return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30'
     return 'text-red-400 bg-red-500/20 border-red-500/30'
   }
 
   const getComplexityLabel = (score: number) => {
     if (score < 40) return 'Low Risk'
-    if (score < 70) return 'Medium Risk'
+    if (score < 65) return 'Medium Risk'
     return 'High Risk'
   }
 
@@ -129,7 +146,7 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center text-white">
           <Shield className="h-5 w-5 mr-2" />
-          Dry Run Analysis & Migration Preview
+          🎯 Dry Run Analysis & Migration Preview
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -138,10 +155,10 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
             <div className="mb-6">
               <Target className="h-16 w-16 text-blue-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">
-                Ready for Dry Run Analysis
+                🚀 Ready for Dry Run Analysis
               </h3>
               <p className="text-gray-300 mb-6 max-w-md mx-auto">
-                Analyze migration complexity, detect potential issues, and get optimization recommendations before executing the actual migration.
+                Analyze migration complexity, detect potential issues, and get AI-powered optimization recommendations before executing the actual migration.
               </p>
             </div>
             <Button 
@@ -149,7 +166,7 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
               className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-8 py-3"
             >
               <Play className="h-5 w-5 mr-2" />
-              Start Dry Run Analysis
+              🔍 Start Dry Run Analysis
             </Button>
           </div>
         )}
@@ -158,11 +175,11 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
           <div className="space-y-6">
             <div className="text-center py-8">
               <Loader2 className="h-12 w-12 text-blue-400 mx-auto mb-4 animate-spin" />
-              <h3 className="text-lg font-semibold text-white mb-2">Analyzing Migration</h3>
-              <p className="text-gray-300 mb-4">Evaluating schema compatibility and performance factors...</p>
+              <h3 className="text-lg font-semibold text-white mb-2">🔬 Analyzing Migration Complexity</h3>
+              <p className="text-gray-300 mb-4">Evaluating schema compatibility, performance factors, and optimization opportunities...</p>
               <div className="max-w-md mx-auto">
                 <Progress value={progress} className="h-3 mb-2" />
-                <p className="text-sm text-gray-400">{Math.round(progress)}% complete</p>
+                <p className="text-sm text-gray-400">⏱️ {Math.round(progress)}% complete</p>
               </div>
             </div>
           </div>
@@ -170,7 +187,7 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
 
         {dryRunResult && (
           <div className="space-y-6">
-            {/* Complexity Score */}
+            {/* ✅ Complexity Score Display */}
             <ComplexityIndicator score={dryRunResult.complexityScore} showDetails={true} />
 
             {/* Key Metrics */}
@@ -179,12 +196,12 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
                 <CardContent className="p-6 text-center">
                   <TrendingUp className="h-10 w-10 text-blue-400 mx-auto mb-3" />
                   <div className="text-3xl font-bold text-white mb-2">
-                    {dryRunResult.complexityScore}%
+                    {dryRunResult.complexityScore}/100
                   </div>
                   <Badge className={getComplexityColor(dryRunResult.complexityScore)}>
                     {getComplexityLabel(dryRunResult.complexityScore)}
                   </Badge>
-                  <p className="text-gray-300 text-sm mt-2">Migration Complexity</p>
+                  <p className="text-gray-300 text-sm mt-2">📊 Migration Complexity</p>
                 </CardContent>
               </Card>
 
@@ -214,7 +231,7 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
               <CardHeader>
                 <CardTitle className="text-white text-lg flex items-center">
                   <AlertTriangle className="h-5 w-5 mr-2 text-yellow-400" />
-                  Field Type Mismatches Detected
+                  🔧 Field Type Mismatches Detected
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -234,12 +251,12 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
               </CardContent>
             </Card>
 
-            {/* Recommendations */}
+            {/* AI Recommendations */}
             <Card className="bg-white/5 border-white/10">
               <CardHeader>
                 <CardTitle className="text-white text-lg flex items-center">
                   <CheckCircle className="h-5 w-5 mr-2 text-green-400" />
-                  💡 Optimization Recommendations
+                  🤖 AI-Powered Optimization Recommendations
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -253,15 +270,15 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
               </CardContent>
             </Card>
 
-            {/* Summary Logs */}
+            {/* ✅ Summary Logs */}
             <Card className="bg-white/5 border-white/10">
               <CardHeader>
-                <CardTitle className="text-white text-lg">📋 Analysis Summary</CardTitle>
+                <CardTitle className="text-white text-lg">📋 Detailed Analysis Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 font-mono text-sm">
                   {dryRunResult.summaryLogs.map((log, index) => (
-                    <div key={index} className="text-gray-300">
+                    <div key={index} className="text-gray-300 p-2 bg-black/20 rounded">
                       {log}
                     </div>
                   ))}
@@ -274,17 +291,17 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
               <Button 
                 onClick={runDryRun}
                 variant="outline"
-                className="border-white/20 text-gray-800 hover:bg-white/10"
+                className="border-white/20 text-gray-900 bg-white hover:bg-gray-100"
               >
                 <Shield className="h-4 w-4 mr-2" />
-                Re-run Analysis
+                🔄 Re-run Analysis
               </Button>
               <Button 
                 onClick={onProceedToActualMigration}
                 className="bg-green-500 hover:bg-green-600 text-white font-semibold flex-1"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                ✅ Proceed with Migration
+                ✅ Accept & Proceed with Migration
               </Button>
             </div>
           </div>

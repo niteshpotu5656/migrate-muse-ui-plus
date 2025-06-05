@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useToast } from "@/hooks/use-toast"
+import { ComplexityIndicator } from './ComplexityIndicator'
 import { 
   Play, 
   AlertTriangle, 
@@ -50,6 +51,11 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
     setIsRunning(true)
     setProgress(0)
     
+    toast({
+      title: "🔄 Dry Run Started",
+      description: "Analyzing migration complexity and potential issues...",
+    });
+
     // Simulate progress updates
     const progressInterval = setInterval(() => {
       setProgress(prev => {
@@ -69,23 +75,26 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
       complexityScore: Math.floor(Math.random() * 40) + 30, // 30-70 range
       estimatedTime: `${Math.floor(Math.random() * 8) + 2} minutes ${Math.floor(Math.random() * 60)} seconds`,
       recommendations: [
-        "Consider increasing batch size to 15,000 rows for better performance",
-        "Enable parallel processing for tables larger than 50,000 rows",
-        "Review JSON field mappings for potential data loss",
-        "Add indexes on foreign key columns before migration"
+        "📊 Consider increasing batch size to 15,000 rows for better performance",
+        "⚡ Enable parallel processing for tables larger than 50,000 rows",
+        "🔍 Review JSON field mappings for potential data loss",
+        "📇 Add indexes on foreign key columns before migration",
+        "🔐 Enable connection pooling to improve database throughput"
       ].slice(0, Math.floor(Math.random() * 3) + 2),
       fieldMismatches: [
-        { table: "users", source: "created_at (DATETIME)", target: "created_timestamp (TIMESTAMP)", issue: "Type conversion required" },
-        { table: "orders", source: "status (ENUM)", target: "order_status (TEXT)", issue: "Enum values need mapping" },
-        { table: "products", source: "metadata (JSON)", target: "product_data (JSONB)", issue: "JSON format migration" }
+        { table: "users", source: "created_at (DATETIME)", target: "created_timestamp (TIMESTAMP)", issue: "⚠️ Type conversion required" },
+        { table: "orders", source: "status (ENUM)", target: "order_status (TEXT)", issue: "🔄 Enum values need mapping" },
+        { table: "products", source: "metadata (JSON)", target: "product_data (JSONB)", issue: "📝 JSON format migration" },
+        { table: "customers", source: "phone (VARCHAR)", target: "contact_phone (TEXT)", issue: "✅ Safe string conversion" }
       ],
       summaryLogs: [
-        "✓ Source database connection verified",
-        "✓ Target database schema analyzed",
-        "⚠ 3 field type mismatches detected",
-        "✓ Foreign key relationships mapped",
-        "✓ Index requirements calculated",
-        "⚠ Performance optimization suggestions generated"
+        "✅ Source database connection verified",
+        "✅ Target database schema analyzed",
+        "⚠️ 4 field type mismatches detected",
+        "✅ Foreign key relationships mapped",
+        "✅ Index requirements calculated",
+        "📊 Performance optimization suggestions generated",
+        "🔍 Data integrity checks completed"
       ]
     }
     
@@ -94,9 +103,11 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
     clearInterval(progressInterval)
     setProgress(100)
 
+    const complexityLevel = mockResult.complexityScore < 40 ? "Low" : mockResult.complexityScore < 70 ? "Medium" : "High";
+    
     toast({
-      title: "Dry Run Complete",
-      description: `Migration complexity: ${mockResult.complexityScore}%. Review recommendations before proceeding.`,
+      title: "✅ Dry Run Complete",
+      description: `Migration complexity: ${complexityLevel} (${mockResult.complexityScore}%). Review recommendations before proceeding.`,
       duration: 5000,
     })
   }
@@ -159,7 +170,10 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
 
         {dryRunResult && (
           <div className="space-y-6">
-            {/* Complexity Score & Key Metrics */}
+            {/* Complexity Score */}
+            <ComplexityIndicator score={dryRunResult.complexityScore} showDetails={true} />
+
+            {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="bg-white/5 border-white/10">
                 <CardContent className="p-6 text-center">
@@ -180,7 +194,7 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
                   <div className="text-xl font-bold text-white mb-2">
                     {dryRunResult.estimatedTime}
                   </div>
-                  <p className="text-gray-300 text-sm">Estimated Duration</p>
+                  <p className="text-gray-300 text-sm">⏱️ Estimated Duration</p>
                 </CardContent>
               </Card>
 
@@ -190,7 +204,7 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
                   <div className="text-xl font-bold text-white mb-2">
                     {dryRunResult.fieldMismatches.length}
                   </div>
-                  <p className="text-gray-300 text-sm">Field Mismatches</p>
+                  <p className="text-gray-300 text-sm">🔧 Field Mismatches</p>
                 </CardContent>
               </Card>
             </div>
@@ -208,7 +222,7 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
                   <div key={index} className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                        {mismatch.table}
+                        📊 {mismatch.table}
                       </Badge>
                       <span className="text-yellow-400 text-sm">{mismatch.issue}</span>
                     </div>
@@ -225,7 +239,7 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
               <CardHeader>
                 <CardTitle className="text-white text-lg flex items-center">
                   <CheckCircle className="h-5 w-5 mr-2 text-green-400" />
-                  Optimization Recommendations
+                  💡 Optimization Recommendations
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -242,7 +256,7 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
             {/* Summary Logs */}
             <Card className="bg-white/5 border-white/10">
               <CardHeader>
-                <CardTitle className="text-white text-lg">Analysis Summary</CardTitle>
+                <CardTitle className="text-white text-lg">📋 Analysis Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 font-mono text-sm">
@@ -260,7 +274,7 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
               <Button 
                 onClick={runDryRun}
                 variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
+                className="border-white/20 text-gray-800 hover:bg-white/10"
               >
                 <Shield className="h-4 w-4 mr-2" />
                 Re-run Analysis
@@ -270,7 +284,7 @@ export const DryRunPanel: React.FC<DryRunPanelProps> = ({
                 className="bg-green-500 hover:bg-green-600 text-white font-semibold flex-1"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Proceed with Migration
+                ✅ Proceed with Migration
               </Button>
             </div>
           </div>

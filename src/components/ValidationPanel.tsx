@@ -14,7 +14,8 @@ import {
   Key,
   Loader2,
   Play,
-  RotateCcw
+  RotateCcw,
+  Shield
 } from 'lucide-react'
 
 interface ValidationPanelProps {
@@ -63,7 +64,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
       name: 'Unique Constraints',
       description: 'Check unique constraint violations',
       status: 'pending',
-      icon: CheckCircle
+      icon: Shield
     }
   ])
 
@@ -79,6 +80,11 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
 
     // Reset all checks to pending
     setChecks(prev => prev.map(check => ({ ...check, status: 'pending' as const })))
+
+    toast({
+      title: "⚡ Validation Started",
+      description: "Running comprehensive database validation checks...",
+    });
 
     // Simulate running each check
     for (let i = 0; i < checks.length; i++) {
@@ -120,15 +126,16 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
     
     if (!hasFailures) {
       toast({
-        title: "Validation Complete",
-        description: "All validation checks passed successfully!",
+        title: "✅ Validation Complete",
+        description: "All validation checks passed successfully! Ready to proceed.",
         duration: 4000,
       })
       onValidationComplete?.(finalChecks)
     } else {
       toast({
-        title: "Validation Issues Detected",
+        title: "⚠️ Validation Issues Detected",
         description: "Some validation checks failed. Please review the results.",
+        variant: "destructive",
         duration: 4000,
       })
     }
@@ -142,13 +149,13 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
         if (random > 0.8) {
           return {
             status: 'failed' as const,
-            result: 'Mismatch detected',
-            details: 'Source: 1,234 rows | Target: 1,235 rows'
+            result: '❌ Mismatch detected',
+            details: 'Source: 1,234 rows | Target: 1,235 rows (1 row difference)'
           }
         }
         return {
           status: 'passed' as const,
-          result: 'Counts match',
+          result: '✅ Counts match perfectly',
           details: 'Source: 1,234 rows | Target: 1,234 rows'
         }
       
@@ -156,48 +163,48 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
         if (random > 0.9) {
           return {
             status: 'failed' as const,
-            result: 'Checksum mismatch',
-            details: 'Hash validation failed for 3 records'
+            result: '❌ Checksum mismatch',
+            details: 'Hash validation failed for 3 records in users table'
           }
         }
         return {
           status: 'passed' as const,
-          result: 'Checksums valid',
-          details: 'MD5: a1b2c3d4e5f6... | All records verified'
+          result: '✅ All checksums valid',
+          details: 'MD5: a1b2c3d4e5f6... | All 1,234 records verified'
         }
       
       case 'foreign_keys':
         if (random > 0.85) {
           return {
             status: 'warning' as const,
-            result: 'Some constraints missing',
-            details: '2 foreign key constraints not found in target'
+            result: '⚠️ Some constraints missing',
+            details: '2 foreign key constraints not found in target schema'
           }
         }
         return {
           status: 'passed' as const,
-          result: 'All constraints valid',
-          details: '47 foreign key relationships verified'
+          result: '✅ All constraints valid',
+          details: '47 foreign key relationships verified successfully'
         }
       
       case 'unique_constraints':
         if (random > 0.9) {
           return {
             status: 'failed' as const,
-            result: 'Duplicate entries found',
+            result: '❌ Duplicate entries found',
             details: '5 duplicate records in users.email field'
           }
         }
         return {
           status: 'passed' as const,
-          result: 'No duplicates found',
-          details: 'All unique constraints satisfied'
+          result: '✅ No duplicates found',
+          details: 'All unique constraints satisfied across all tables'
         }
       
       default:
         return {
           status: 'passed' as const,
-          result: 'Check completed',
+          result: '✅ Check completed',
           details: 'Validation successful'
         }
     }
@@ -242,6 +249,11 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
     })))
     setOverallProgress(0)
     setCurrentCheckIndex(-1)
+    
+    toast({
+      title: "🔄 Validation Reset",
+      description: "All checks have been reset to pending state.",
+    });
   }
 
   const hasAnyResults = checks.some(check => check.status !== 'pending')
@@ -261,7 +273,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
                 variant="outline"
                 onClick={resetValidation}
                 disabled={isRunning}
-                className="border-white/20 text-gray-900 bg-white hover:bg-gray-100"
+                className="border-white/20 text-gray-800 bg-white hover:bg-gray-100"
               >
                 <RotateCcw className="h-3 w-3 mr-1" />
                 Reset
@@ -347,13 +359,13 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
               <span className="text-white">Validation Summary</span>
               <div className="flex space-x-2">
                 <span className="text-green-400">
-                  {checks.filter(c => c.status === 'passed').length} Passed
+                  ✅ {checks.filter(c => c.status === 'passed').length} Passed
                 </span>
                 <span className="text-yellow-400">
-                  {checks.filter(c => c.status === 'warning').length} Warnings
+                  ⚠️ {checks.filter(c => c.status === 'warning').length} Warnings
                 </span>
                 <span className="text-red-400">
-                  {checks.filter(c => c.status === 'failed').length} Failed
+                  ❌ {checks.filter(c => c.status === 'failed').length} Failed
                 </span>
               </div>
             </div>

@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { WelcomeSection } from '@/components/WelcomeSection';
 import { MigrationWizard } from '@/components/MigrationWizard';
@@ -12,6 +11,10 @@ import { MigrationHistory } from '@/components/MigrationHistory';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { DryRunPanel } from '@/components/DryRunPanel';
 import { ValidationPanel } from '@/components/ValidationPanel';
+import { LearningSystem } from '@/components/LearningSystem';
+import { AutoUpdateModule } from '@/components/AutoUpdateModule';
+import { ConsoleLogStream } from '@/components/ConsoleLogStream';
+import { ExportConfirmationModal } from '@/components/ExportConfirmationModal';
 import { 
   Database, 
   Play, 
@@ -19,15 +22,21 @@ import {
   Settings, 
   BarChart, 
   Shield,
-  Clock,
-  CheckCircle,
-  AlertCircle
+  Brain,
+  Download
 } from 'lucide-react';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('welcome');
   const [migrationInProgress, setMigrationInProgress] = useState(false);
   const [currentMigrationId, setCurrentMigrationId] = useState<string | null>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportType, setExportType] = useState('Migration');
+
+  const handleExportClick = (type: string) => {
+    setExportType(type);
+    setExportModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -51,6 +60,15 @@ const Index = () => {
                 System Healthy
               </Badge>
               <Button 
+                onClick={() => handleExportClick('System')}
+                variant="outline" 
+                size="sm" 
+                className="bg-white text-gray-900 font-semibold border-white hover:bg-gray-100"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button 
                 variant="outline" 
                 size="sm" 
                 className="bg-white text-gray-900 font-semibold border-white hover:bg-gray-100"
@@ -68,7 +86,7 @@ const Index = () => {
       <div className="container mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Navigation Tabs */}
-          <TabsList className="grid w-full grid-cols-5 bg-black/20 backdrop-blur-xl border border-white/10">
+          <TabsList className="grid w-full grid-cols-6 bg-black/20 backdrop-blur-xl border border-white/10">
             <TabsTrigger value="welcome" className="data-[state=active]:bg-white/20 text-white hover:bg-white/10">
               <Database className="h-4 w-4 mr-2" />
               Dashboard
@@ -80,6 +98,10 @@ const Index = () => {
             <TabsTrigger value="console" className="data-[state=active]:bg-white/20 text-white hover:bg-white/10">
               <BarChart className="h-4 w-4 mr-2" />
               Live Console
+            </TabsTrigger>
+            <TabsTrigger value="learning" className="data-[state=active]:bg-white/20 text-white hover:bg-white/10">
+              <Brain className="h-4 w-4 mr-2" />
+              AI Learning
             </TabsTrigger>
             <TabsTrigger value="history" className="data-[state=active]:bg-white/20 text-white hover:bg-white/10">
               <History className="h-4 w-4 mr-2" />
@@ -106,13 +128,18 @@ const Index = () => {
 
           <TabsContent value="console" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <MigrationConsole 
+              <ConsoleLogStream 
                 isActive={migrationInProgress} 
-                onMigrationComplete={() => setMigrationInProgress(false)} 
+                migrationId={currentMigrationId || undefined}
               />
               
               {currentMigrationId && (
-                <ValidationPanel migrationId={currentMigrationId} />
+                <ValidationPanel 
+                  migrationId={currentMigrationId}
+                  onValidationComplete={() => {
+                    console.log('✅ Validation complete');
+                  }}
+                />
               )}
             </div>
             
@@ -142,9 +169,14 @@ const Index = () => {
                 }}
                 onProceedToActualMigration={() => {
                   setMigrationInProgress(true);
+                  console.log('✅ Dry run complete - proceeding to migration');
                 }}
               />
             )}
+          </TabsContent>
+
+          <TabsContent value="learning" className="space-y-6">
+            <LearningSystem />
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">
@@ -152,10 +184,21 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
-            <SettingsPanel />
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <SettingsPanel />
+              <AutoUpdateModule />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Export Modal */}
+      <ExportConfirmationModal
+        isOpen={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        reportType={exportType}
+        migrationData={{}}
+      />
     </div>
   );
 };

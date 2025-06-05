@@ -39,29 +39,29 @@ export const ConsoleLogStream: React.FC<ConsoleLogStreamProps> = ({
 
   // Mock log messages for simulation
   const mockLogMessages = [
-    { level: 'info' as const, message: 'Initializing database migration service...', details: 'DBMT v2.1.0' },
-    { level: 'info' as const, message: 'Connecting to source database (PostgreSQL)...', details: 'Host: localhost:5432' },
-    { level: 'success' as const, message: 'Source database connection established', details: 'Connection pool: 10 active' },
-    { level: 'info' as const, message: 'Connecting to target database (MongoDB)...', details: 'Host: localhost:27017' },
-    { level: 'success' as const, message: 'Target database connection established', details: 'Database: migration_target' },
-    { level: 'info' as const, message: 'Analyzing source schema...', details: 'Tables found: 12' },
-    { level: 'info' as const, message: 'Validating field mappings...', details: 'Mappings: 47 configured' },
-    { level: 'success' as const, message: 'Schema analysis complete', details: 'Complexity score: 6.8/10' },
-    { level: 'info' as const, message: 'Starting migration batch 1/4...', details: 'Table: users (5,234 rows)' },
-    { level: 'info' as const, message: 'Migrating table: users', details: 'Progress: 1,000/5,234 rows' },
-    { level: 'info' as const, message: 'Migrating table: users', details: 'Progress: 2,500/5,234 rows' },
-    { level: 'info' as const, message: 'Migrating table: users', details: 'Progress: 4,000/5,234 rows' },
-    { level: 'success' as const, message: 'Table migration complete: users', details: '5,234 rows migrated successfully' },
-    { level: 'info' as const, message: 'Starting migration batch 2/4...', details: 'Table: orders (12,847 rows)' },
-    { level: 'info' as const, message: 'Migrating table: orders', details: 'Progress: 3,000/12,847 rows' },
-    { level: 'warning' as const, message: 'Data type conversion required', details: 'VARCHAR to ObjectId for field: user_id' },
-    { level: 'info' as const, message: 'Migrating table: orders', details: 'Progress: 7,500/12,847 rows' },
-    { level: 'info' as const, message: 'Migrating table: orders', details: 'Progress: 11,200/12,847 rows' },
-    { level: 'success' as const, message: 'Table migration complete: orders', details: '12,847 rows migrated successfully' },
-    { level: 'info' as const, message: 'Running data validation checks...', details: 'Validating row counts and integrity' },
-    { level: 'success' as const, message: 'Row count validation passed', details: 'Source: 18,081 | Target: 18,081' },
-    { level: 'success' as const, message: 'Data integrity validation passed', details: 'Checksum verification complete' },
-    { level: 'success' as const, message: 'Migration completed successfully!', details: 'Total time: 4m 32s' }
+    { level: 'info' as const, message: '🚀 Initializing database migration service...', details: 'DBMT v2.1.0' },
+    { level: 'info' as const, message: '🔌 Connecting to source database (PostgreSQL)...', details: 'Host: localhost:5432' },
+    { level: 'success' as const, message: '✅ Source database connection established', details: 'Connection pool: 10 active' },
+    { level: 'info' as const, message: '🔌 Connecting to target database (MongoDB)...', details: 'Host: localhost:27017' },
+    { level: 'success' as const, message: '✅ Target database connection established', details: 'Database: migration_target' },
+    { level: 'info' as const, message: '🔍 Analyzing source schema...', details: 'Tables found: 12' },
+    { level: 'info' as const, message: '🗺️ Validating field mappings...', details: 'Mappings: 47 configured' },
+    { level: 'success' as const, message: '✅ Schema analysis complete', details: 'Complexity score: 6.8/10' },
+    { level: 'info' as const, message: '📦 Starting migration batch 1/4...', details: 'Table: users (5,234 rows)' },
+    { level: 'info' as const, message: '⚡ Migrating table: users', details: 'Progress: 1,000/5,234 rows (19%)' },
+    { level: 'info' as const, message: '⚡ Migrating table: users', details: 'Progress: 2,500/5,234 rows (48%)' },
+    { level: 'info' as const, message: '⚡ Migrating table: users', details: 'Progress: 4,000/5,234 rows (76%)' },
+    { level: 'success' as const, message: '✅ Table migration complete: users', details: '5,234 rows migrated successfully' },
+    { level: 'info' as const, message: '📦 Starting migration batch 2/4...', details: 'Table: orders (12,847 rows)' },
+    { level: 'info' as const, message: '⚡ Migrating table: orders', details: 'Progress: 3,000/12,847 rows (23%)' },
+    { level: 'warning' as const, message: '⚠️ Data type conversion required', details: 'VARCHAR to ObjectId for field: user_id' },
+    { level: 'info' as const, message: '⚡ Migrating table: orders', details: 'Progress: 7,500/12,847 rows (58%)' },
+    { level: 'info' as const, message: '⚡ Migrating table: orders', details: 'Progress: 11,200/12,847 rows (87%)' },
+    { level: 'success' as const, message: '✅ Table migration complete: orders', details: '12,847 rows migrated successfully' },
+    { level: 'info' as const, message: '🔍 Running data validation checks...', details: 'Validating row counts and integrity' },
+    { level: 'success' as const, message: '✅ Row count validation passed', details: 'Source: 18,081 | Target: 18,081' },
+    { level: 'success' as const, message: '✅ Data integrity validation passed', details: 'Checksum verification complete' },
+    { level: 'success' as const, message: '🎉 Migration completed successfully!', details: 'Total time: 4m 32s | All 18,081 records migrated' }
   ];
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export const ConsoleLogStream: React.FC<ConsoleLogStreamProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-white flex items-center">
             <Terminal className="h-5 w-5 mr-2" />
-            Live Console
+            📶 Live Console
             {isActive && (
               <Badge className="bg-green-500/20 text-green-400 border-green-500/30 ml-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
@@ -144,7 +144,7 @@ export const ConsoleLogStream: React.FC<ConsoleLogStreamProps> = ({
               size="sm"
               variant="outline"
               onClick={() => setIsPaused(!isPaused)}
-              className="border-white/20 text-white hover:bg-white/10"
+              className="border-white/20 text-gray-800 hover:bg-white/10"
             >
               {isPaused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
             </Button>
@@ -152,7 +152,7 @@ export const ConsoleLogStream: React.FC<ConsoleLogStreamProps> = ({
               size="sm"
               variant="outline"
               onClick={clearLogs}
-              className="border-white/20 text-white hover:bg-white/10"
+              className="border-white/20 text-gray-800 hover:bg-white/10"
             >
               <RotateCcw className="h-3 w-3" />
             </Button>
@@ -161,7 +161,7 @@ export const ConsoleLogStream: React.FC<ConsoleLogStreamProps> = ({
               variant="outline"
               onClick={exportLogs}
               disabled={logs.length === 0}
-              className="border-white/20 text-white hover:bg-white/10"
+              className="border-white/20 text-gray-800 hover:bg-white/10"
             >
               <Download className="h-3 w-3" />
             </Button>
@@ -177,7 +177,7 @@ export const ConsoleLogStream: React.FC<ConsoleLogStreamProps> = ({
           {logs.length === 0 ? (
             <div className="text-gray-400 text-center py-8">
               <Terminal className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Console output will appear here when migration starts</p>
+              <p>📺 Console output will appear here when migration starts</p>
             </div>
           ) : (
             logs.map((log) => (
@@ -204,7 +204,7 @@ export const ConsoleLogStream: React.FC<ConsoleLogStreamProps> = ({
         </div>
         
         <div className="flex items-center justify-between mt-3 text-sm text-gray-400">
-          <span>{logs.length} log entries</span>
+          <span>📊 {logs.length} log entries</span>
           <label className="flex items-center space-x-2">
             <input
               type="checkbox"

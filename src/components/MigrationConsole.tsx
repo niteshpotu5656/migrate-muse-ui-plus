@@ -1,344 +1,275 @@
 
-import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ConsoleLogStream } from './ConsoleLogStream'
-import { ComplexityIndicator } from './ComplexityIndicator'
-import { useToast } from "@/hooks/use-toast"
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { 
-  Database, 
-  BarChart, 
-  Clock, 
+  Play, 
+  Pause, 
+  Square, 
+  RotateCcw,
   CheckCircle,
   AlertTriangle,
-  Play,
-  Pause,
-  Square,
-  Target,
-  Activity
-} from 'lucide-react'
+  TrendingUp,
+  Database,
+  Clock
+} from 'lucide-react';
 
 interface MigrationConsoleProps {
-  isActive: boolean
-  onMigrationComplete: () => void
-}
-
-interface MigrationStats {
-  totalTables: number
-  completedTables: number
-  totalRows: number
-  migratedRows: number
-  currentTable: string
-  startTime: string
-  estimatedCompletion: string
-  speed: string
+  isActive: boolean;
+  onMigrationComplete?: () => void;
 }
 
 export const MigrationConsole: React.FC<MigrationConsoleProps> = ({ 
   isActive, 
   onMigrationComplete 
 }) => {
-  const [progress, setProgress] = useState(0)
-  const [status, setStatus] = useState<'idle' | 'running' | 'paused' | 'completed' | 'error'>('idle')
-  const [stats, setStats] = useState<MigrationStats>({
-    totalTables: 8,
-    completedTables: 0,
-    totalRows: 245890,
-    migratedRows: 0,
-    currentTable: '',
-    startTime: '',
-    estimatedCompletion: '',
-    speed: '0 rows/sec'
-  })
-  const [complexityScore] = useState(67)
-  const { toast } = useToast()
+  const [progress, setProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [currentTable, setCurrentTable] = useState('');
+  const [tablesProcessed, setTablesProcessed] = useState(0);
+  const [totalTables] = useState(12);
+  const [rowsProcessed, setRowsProcessed] = useState(0);
+  const [totalRows] = useState(125000);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [elapsedTime, setElapsedTime] = useState('00:00:00');
+  const { toast } = useToast();
+
+  const tableList = [
+    'users', 'orders', 'products', 'customers', 'payments', 'inventory',
+    'categories', 'reviews', 'addresses', 'shipping', 'discounts', 'analytics'
+  ];
 
   useEffect(() => {
-    if (isActive && status === 'idle') {
-      setStatus('running')
-      setStats(prev => ({
-        ...prev,
-        startTime: new Date().toLocaleTimeString(),
-        currentTable: 'users'
-      }))
-    }
-  }, [isActive, status])
+    if (!isActive || isPaused) return;
 
+    if (!startTime) {
+      setStartTime(new Date());
+    }
+
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        const newProgress = Math.min(prev + Math.random() * 2, 100);
+        
+        // Update current table based on progress
+        const currentTableIndex = Math.floor((newProgress / 100) * totalTables);
+        if (currentTableIndex < tableList.length) {
+          setCurrentTable(tableList[currentTableIndex]);
+          setTablesProcessed(currentTableIndex);
+        }
+        
+        // Update rows processed
+        setRowsProcessed(Math.floor((newProgress / 100) * totalRows));
+        
+        // Complete migration when reaching 100%
+        if (newProgress >= 100 && onMigrationComplete) {
+          onMigrationComplete();
+          toast({
+            title: "🎉 Migration Complete!",
+            description: `Successfully migrated ${totalRows.toLocaleString()} rows across ${totalTables} tables.`,
+            duration: 6000,
+          });
+        }
+        
+        return newProgress;
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isActive, isPaused, startTime, onMigrationComplete, totalRows, totalTables, tableList, toast]);
+
+  // Update elapsed time
   useEffect(() => {
-    if (status === 'running') {
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          const newProgress = Math.min(prev + Math.random() * 3, 100)
-          
-          // Update stats based on progress
-          const completedTables = Math.floor((newProgress / 100) * stats.totalTables)
-          const migratedRows = Math.floor((newProgress / 100) * stats.totalRows)
-          const speed = Math.floor(Math.random() * 5000) + 1000
-          
-          const tableNames = ['users', 'orders', 'products', 'categories', 'reviews', 'payments', 'shipping', 'analytics']
-          const currentTableIndex = Math.floor((newProgress / 100) * tableNames.length)
-          
-          setStats(prev => ({
-            ...prev,
-            completedTables,
-            migratedRows,
-            currentTable: tableNames[currentTableIndex] || tableNames[tableNames.length - 1],
-            speed: `${speed.toLocaleString()} rows/sec`,
-            estimatedCompletion: new Date(Date.now() + (100 - newProgress) * 60000).toLocaleTimeString()
-          }))
+    if (!startTime || !isActive) return;
 
-          if (newProgress >= 100) {
-            setStatus('completed')
-            onMigrationComplete()
-            toast({
-              title: "Migration Complete!",
-              description: "All data has been successfully migrated.",
-              duration: 5000,
-            })
-          }
-          
-          return newProgress
-        })
-      }, 1000 + Math.random() * 2000)
+    const interval = setInterval(() => {
+      const now = new Date();
+      const elapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+      const hours = Math.floor(elapsed / 3600);
+      const minutes = Math.floor((elapsed % 3600) / 60);
+      const seconds = elapsed % 60;
+      setElapsedTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+    }, 1000);
 
-      return () => clearInterval(interval)
-    }
-  }, [status, stats.totalTables, stats.totalRows, onMigrationComplete, toast])
+    return () => clearInterval(interval);
+  }, [startTime, isActive]);
 
-  const pauseMigration = () => {
-    setStatus('paused')
+  const handlePause = () => {
+    setIsPaused(!isPaused);
     toast({
-      title: "Migration Paused",
-      description: "Migration has been paused. You can resume anytime.",
-      duration: 3000,
-    })
-  }
+      title: isPaused ? "▶️ Migration Resumed" : "⏸️ Migration Paused",
+      description: isPaused ? "Migration process has been resumed." : "Migration process has been paused.",
+    });
+  };
 
-  const resumeMigration = () => {
-    setStatus('running')
+  const handleStop = () => {
+    setProgress(0);
+    setIsPaused(false);
+    setCurrentTable('');
+    setTablesProcessed(0);
+    setRowsProcessed(0);
+    setStartTime(null);
+    setElapsedTime('00:00:00');
     toast({
-      title: "Migration Resumed",
-      description: "Continuing with data migration...",
-      duration: 3000,
-    })
-  }
+      title: "🛑 Migration Stopped",
+      description: "Migration process has been stopped and reset.",
+      variant: "destructive",
+    });
+  };
 
-  const stopMigration = () => {
-    setStatus('idle')
-    setProgress(0)
-    setStats(prev => ({
-      ...prev,
-      completedTables: 0,
-      migratedRows: 0,
-      currentTable: '',
-      startTime: '',
-      estimatedCompletion: '',
-      speed: '0 rows/sec'
-    }))
+  const handleRestart = () => {
+    setProgress(0);
+    setIsPaused(false);
+    setCurrentTable('');
+    setTablesProcessed(0);
+    setRowsProcessed(0);
+    setStartTime(new Date());
     toast({
-      title: "Migration Stopped",
-      description: "Migration has been stopped and reset.",
-      duration: 3000,
-    })
-  }
+      title: "🔄 Migration Restarted",
+      description: "Migration process has been restarted from the beginning.",
+    });
+  };
 
   const getStatusBadge = () => {
-    switch (status) {
-      case 'running':
-        return (
-          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-            <Activity className="w-3 h-3 mr-1 animate-pulse" />
-            Running
-          </Badge>
-        )
-      case 'paused':
-        return (
-          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-            <Pause className="w-3 h-3 mr-1" />
-            Paused
-          </Badge>
-        )
-      case 'completed':
-        return (
-          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Completed
-          </Badge>
-        )
-      case 'error':
-        return (
-          <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
-            <AlertTriangle className="w-3 h-3 mr-1" />
-            Error
-          </Badge>
-        )
-      default:
-        return (
-          <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">
-            <Clock className="w-3 h-3 mr-1" />
-            Idle
-          </Badge>
-        )
+    if (!isActive) {
+      return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">Idle</Badge>;
     }
-  }
+    if (isPaused) {
+      return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Paused</Badge>;
+    }
+    if (progress >= 100) {
+      return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Complete</Badge>;
+    }
+    return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+      <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
+      Running
+    </Badge>;
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Main Console */}
-      <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-white flex items-center">
-                <Database className="h-5 w-5 mr-2" />
-                Migration Control Center
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Real-time migration monitoring and control
-              </CardDescription>
+    <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-white flex items-center">
+            <Database className="h-5 w-5 mr-2" />
+            Migration Console
+          </CardTitle>
+          <div className="flex items-center space-x-2">
+            {getStatusBadge()}
+            <div className="flex space-x-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handlePause}
+                disabled={!isActive || progress >= 100}
+                className="border-white/20 text-gray-800 hover:bg-white/10"
+              >
+                {isPaused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleStop}
+                disabled={!isActive}
+                className="border-white/20 text-gray-800 hover:bg-white/10"
+              >
+                <Square className="h-3 w-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRestart}
+                className="border-white/20 text-gray-800 hover:bg-white/10"
+              >
+                <RotateCcw className="h-3 w-3" />
+              </Button>
             </div>
-            <div className="flex items-center space-x-2">
-              {getStatusBadge()}
-              <div className="flex space-x-1">
-                {status === 'running' && (
-                  <Button
-                    onClick={pauseMigration}
-                    size="sm"
-                    variant="outline"
-                    className="border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10"
-                  >
-                    <Pause className="h-3 w-3" />
-                  </Button>
-                )}
-                {status === 'paused' && (
-                  <Button
-                    onClick={resumeMigration}
-                    size="sm"
-                    variant="outline"
-                    className="border-green-500/30 text-green-400 hover:bg-green-500/10"
-                  >
-                    <Play className="h-3 w-3" />
-                  </Button>
-                )}
-                {(status === 'running' || status === 'paused') && (
-                  <Button
-                    onClick={stopMigration}
-                    size="sm"
-                    variant="outline"
-                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                  >
-                    <Square className="h-3 w-3" />
-                  </Button>
-                )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Overall Progress */}
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-white font-medium">Overall Progress</span>
+            <span className="text-white font-bold">{Math.round(progress)}%</span>
+          </div>
+          <Progress value={progress} className="h-3" />
+        </div>
+
+        {/* Current Status */}
+        {isActive && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <h4 className="text-white font-medium flex items-center">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Current Status
+              </h4>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Current Table:</span>
+                  <span className="text-white">{currentTable || 'Initializing...'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Tables Processed:</span>
+                  <span className="text-white">{tablesProcessed}/{totalTables}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Rows Processed:</span>
+                  <span className="text-white">{rowsProcessed.toLocaleString()}/{totalRows.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-white font-medium flex items-center">
+                <Clock className="h-4 w-4 mr-2" />
+                Timing
+              </h4>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Elapsed Time:</span>
+                  <span className="text-white">{elapsedTime}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Est. Remaining:</span>
+                  <span className="text-white">
+                    {progress > 0 ? `${Math.round((100 - progress) * 2)} minutes` : '--'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Speed:</span>
+                  <span className="text-white">{Math.round(rowsProcessed / 60)} rows/sec</span>
+                </div>
               </div>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Progress Overview */}
-          <div className="space-y-4">
-            <div className="flex justify-between text-sm text-gray-300">
-              <span>Overall Progress</span>
-              <span>{progress.toFixed(1)}%</span>
-            </div>
-            <Progress value={progress} className="h-3" />
-            
-            {status !== 'idle' && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-                  <div className="text-lg font-bold text-white">{stats.completedTables}/{stats.totalTables}</div>
-                  <div className="text-xs text-gray-400">Tables</div>
-                </div>
-                <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-                  <div className="text-lg font-bold text-white">{stats.migratedRows.toLocaleString()}</div>
-                  <div className="text-xs text-gray-400">Rows Migrated</div>
-                </div>
-                <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-                  <div className="text-lg font-bold text-white">{stats.speed}</div>
-                  <div className="text-xs text-gray-400">Current Speed</div>
-                </div>
-                <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-                  <div className="text-lg font-bold text-white">{stats.estimatedCompletion}</div>
-                  <div className="text-xs text-gray-400">Est. Completion</div>
-                </div>
-              </div>
-            )}
-            
-            {stats.currentTable && (
-              <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <Target className="h-4 w-4 text-blue-400" />
-                  <span className="text-blue-400 font-medium">Currently migrating:</span>
-                  <span className="text-white font-semibold">{stats.currentTable}</span>
-                </div>
-              </div>
-            )}
+        )}
+
+        {/* Summary when not active */}
+        {!isActive && (
+          <div className="text-center py-8">
+            <Database className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-white mb-2">Migration Console Ready</h3>
+            <p className="text-gray-400">Start a migration from the wizard to see live progress here.</p>
           </div>
-        </CardContent>
-      </Card>
+        )}
 
-      <Tabs defaultValue="logs" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 bg-black/20 backdrop-blur-xl border border-white/10">
-          <TabsTrigger value="logs" className="data-[state=active]:bg-white/20 text-white">
-            <BarChart className="h-4 w-4 mr-2" />
-            Live Logs
-          </TabsTrigger>
-          <TabsTrigger value="complexity" className="data-[state=active]:bg-white/20 text-white">
-            <AlertTriangle className="h-4 w-4 mr-2" />
-            Complexity
-          </TabsTrigger>
-          <TabsTrigger value="metrics" className="data-[state=active]:bg-white/20 text-white">
-            <Activity className="h-4 w-4 mr-2" />
-            Metrics
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="logs">
-          <ConsoleLogStream isActive={isActive} migrationId="current" />
-        </TabsContent>
-
-        <TabsContent value="complexity">
-          <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
-            <CardHeader>
-              <CardTitle className="text-white">Migration Complexity Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ComplexityIndicator score={complexityScore} showDetails={true} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="metrics">
-          <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
-            <CardHeader>
-              <CardTitle className="text-white">Performance Metrics</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Clock className="h-5 w-5 text-blue-400" />
-                    <span className="text-white font-medium">Duration</span>
-                  </div>
-                  <div className="text-2xl font-bold text-white">
-                    {stats.startTime ? new Date(Date.now() - new Date(`2024-01-01 ${stats.startTime}`).getTime()).toISOString().substr(11, 8) : '00:00:00'}
-                  </div>
-                </div>
-                <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Database className="h-5 w-5 text-green-400" />
-                    <span className="text-white font-medium">Throughput</span>
-                  </div>
-                  <div className="text-2xl font-bold text-white">{stats.speed}</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
-}
+        {/* Completion Status */}
+        {progress >= 100 && (
+          <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <CheckCircle className="h-5 w-5 text-green-400" />
+              <span className="text-green-400 font-medium">Migration Completed Successfully!</span>
+            </div>
+            <p className="text-gray-300 text-sm">
+              All {totalRows.toLocaleString()} rows have been successfully migrated across {totalTables} tables in {elapsedTime}.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

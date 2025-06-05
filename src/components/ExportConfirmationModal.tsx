@@ -119,7 +119,7 @@ export const ExportConfirmationModal: React.FC<ExportConfirmationModalProps> = (
                 <Checkbox 
                   id="details" 
                   checked={includeDetails}
-                  onCheckedChange={setIncludeDetails}
+                  onCheckedChange={(checked) => setIncludeDetails(checked === true)}
                 />
                 <Label htmlFor="details" className="text-sm text-gray-300">
                   Detailed Analysis & Metrics
@@ -129,7 +129,7 @@ export const ExportConfirmationModal: React.FC<ExportConfirmationModalProps> = (
                 <Checkbox 
                   id="logs" 
                   checked={includeLogs}
-                  onCheckedChange={setIncludeLogs}
+                  onCheckedChange={(checked) => setIncludeLogs(checked === true)}
                 />
                 <Label htmlFor="logs" className="text-sm text-gray-300">
                   Migration Logs & Timeline
@@ -139,7 +139,7 @@ export const ExportConfirmationModal: React.FC<ExportConfirmationModalProps> = (
                 <Checkbox 
                   id="charts" 
                   checked={includeCharts}
-                  onCheckedChange={setIncludeCharts}
+                  onCheckedChange={(checked) => setIncludeCharts(checked === true)}
                 />
                 <Label htmlFor="charts" className="text-sm text-gray-300">
                   Visual Charts & Graphs

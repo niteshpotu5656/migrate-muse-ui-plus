@@ -7,16 +7,18 @@ interface MigrationState {
     host: string;
     port: number;
     database: string;
-    username?: string;
-    password?: string;
+    username: string;
+    password: string;
+    useSSL: boolean;
   };
   targetConfig: {
     type: string;
     host: string;
     port: number;
     database: string;
-    username?: string;
-    password?: string;
+    username: string;
+    password: string;
+    useSSL: boolean;
   };
   fieldMappings: {
     sourceField: string;
@@ -33,20 +35,30 @@ interface MigrationState {
   migrationOptions: {
     truncateTarget: boolean;
   };
+  validationPassed: boolean;
+  dryRunPassed: boolean;
+  migrationProgress: number;
+  migrationLogs: string[];
 }
 
 const defaultMigrationState: MigrationState = {
   sourceConfig: {
     type: '',
     host: 'localhost',
-    port: 0,
-    database: ''
+    port: 5432,
+    database: '',
+    username: '',
+    password: '',
+    useSSL: true
   },
   targetConfig: {
     type: '',
     host: 'localhost',
-    port: 0,
-    database: ''
+    port: 27017,
+    database: '',
+    username: '',
+    password: '',
+    useSSL: true
   },
   fieldMappings: [],
   validationRules: [],
@@ -56,12 +68,21 @@ const defaultMigrationState: MigrationState = {
   },
   migrationOptions: {
     truncateTarget: false
-  }
+  },
+  validationPassed: false,
+  dryRunPassed: false,
+  migrationProgress: 0,
+  migrationLogs: []
 };
 
 interface WizardContextProps {
   state: MigrationState;
   updateState: (newState: Partial<MigrationState>) => void;
+  addMigrationLog: (log: string) => void;
+  resetMigrationLogs: () => void;
+  setValidationPassed: (passed: boolean) => void;
+  setDryRunPassed: (passed: boolean) => void;
+  updateMigrationProgress: (progress: number) => void;
 }
 
 const WizardContext = createContext<WizardContextProps | undefined>(undefined);
@@ -85,8 +106,51 @@ export const WizardProvider: React.FC<WizardProviderProps> = ({ children }) => {
     setState(prevState => ({ ...prevState, ...newState }));
   };
 
+  const addMigrationLog = (log: string) => {
+    setState(prevState => ({
+      ...prevState,
+      migrationLogs: [...prevState.migrationLogs, `[${new Date().toISOString()}] ${log}`]
+    }));
+  };
+
+  const resetMigrationLogs = () => {
+    setState(prevState => ({
+      ...prevState,
+      migrationLogs: []
+    }));
+  };
+
+  const setValidationPassed = (passed: boolean) => {
+    setState(prevState => ({
+      ...prevState,
+      validationPassed: passed
+    }));
+  };
+
+  const setDryRunPassed = (passed: boolean) => {
+    setState(prevState => ({
+      ...prevState,
+      dryRunPassed: passed
+    }));
+  };
+
+  const updateMigrationProgress = (progress: number) => {
+    setState(prevState => ({
+      ...prevState,
+      migrationProgress: progress
+    }));
+  };
+
   return (
-    <WizardContext.Provider value={{ state, updateState }}>
+    <WizardContext.Provider value={{ 
+      state, 
+      updateState, 
+      addMigrationLog, 
+      resetMigrationLogs,
+      setValidationPassed,
+      setDryRunPassed,
+      updateMigrationProgress
+    }}>
       {children}
     </WizardContext.Provider>
   );

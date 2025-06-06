@@ -5,22 +5,21 @@ import { Separator } from "@/components/ui/separator";
 import { Wand2 } from 'lucide-react';
 import { WizardProvider } from './wizard/WizardContext';
 import { ProgressTracker } from './wizard/ProgressTracker';
+import { WizardFooter } from './wizard/WizardFooter';
 import { SourceDBForm } from './wizard/SourceDBForm';
 import { TargetDBForm } from './wizard/TargetDBForm';
 import { ConnectivityPreview } from './wizard/ConnectivityPreview';
-import { WizardFooter } from './wizard/WizardFooter';
-import { DatabaseConnectionConfig } from './DatabaseConnectionConfig';
-import { FieldMappingConfig } from './FieldMappingConfig';
+import { DatabaseConnectionWizard } from './wizard/DatabaseConnectionWizard';
+import { FieldMappingConfig } from './wizard/FieldMappingConfig';
 import { EnhancedDataValidationConfig } from './wizard/EnhancedDataValidationConfig';
 import { EnhancedDryRunConfig } from './wizard/EnhancedDryRunConfig';
-import { MigrationReview } from './MigrationReview';
-import { MigrationExecution } from './MigrationExecution';
+import { MigrationReviewComponent } from './wizard/MigrationReview';
+import { MigrationExecutionComponent } from './wizard/MigrationExecution';
 
 interface MigrationWizardProps {
   onMigrationStart: () => void;
 }
 
-// Main component that provides the context
 export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationStart }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 10;
@@ -42,37 +41,20 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
       case 3:
         return <ConnectivityPreview />;
       case 4:
-        return (
-          <DatabaseConnectionConfig
-            databaseType="source"
-            databaseName="Source Database"
-            onConnectionConfigured={(config) => handleNext()}
-            onBack={handleBack}
-          />
-        );
+        return <DatabaseConnectionWizard type="source" />;
       case 5:
-        return (
-          <DatabaseConnectionConfig
-            databaseType="target"
-            databaseName="Target Database"
-            onConnectionConfigured={(config) => handleNext()}
-            onBack={handleBack}
-          />
-        );
+        return <DatabaseConnectionWizard type="target" />;
       case 6:
         return (
           <FieldMappingConfig
-            sourceFields={['field1', 'field2', 'field3']}
-            targetFields={['fieldA', 'fieldB', 'fieldC']}
-            onFieldMappingsChange={() => {}}
-            onBack={handleBack}
-            onNext={handleNext}
+            sourceFields={['id', 'name', 'email', 'created_at', 'status', 'user_type', 'preferences']}
+            targetFields={['_id', 'fullName', 'emailAddress', 'creationDate', 'userStatus', 'role', 'settings']}
           />
         );
       case 7:
         return (
           <EnhancedDataValidationConfig
-            fields={['fieldA', 'fieldB', 'fieldC']}
+            fields={['id', 'name', 'email', 'created_at', 'status', 'user_type', 'preferences']}
             onBack={handleBack}
             onNext={handleNext}
           />
@@ -85,34 +67,9 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
           />
         );
       case 9:
-        return (
-          <MigrationReview
-            migrationState={{
-              sourceConfig: { type: '', host: '', port: 0, database: '' },
-              targetConfig: { type: '', host: '', port: 0, database: '' },
-              fieldMappings: [],
-              validationRules: [],
-              dryRunOptions: { batchSize: 1000, enableValidation: true },
-              migrationOptions: { truncateTarget: false }
-            }}
-            onBack={handleBack}
-            onNext={handleNext}
-          />
-        );
+        return <MigrationReviewComponent />;
       case 10:
-        return (
-          <MigrationExecution
-            migrationState={{
-              sourceConfig: { type: '', host: '', port: 0, database: '' },
-              targetConfig: { type: '', host: '', port: 0, database: '' },
-              fieldMappings: [],
-              validationRules: [],
-              dryRunOptions: { batchSize: 1000, enableValidation: true },
-              migrationOptions: { truncateTarget: false }
-            }}
-            onMigrationStart={onMigrationStart}
-          />
-        );
+        return <MigrationExecutionComponent />;
       default:
         return null;
     }

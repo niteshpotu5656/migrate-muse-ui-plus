@@ -1,3 +1,4 @@
+
 import React, { useState, useContext, createContext } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,7 +88,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
     setWizardState(prev => ({ ...prev, ...updates }));
   };
 
-  // Corrected flow order: DB Config → Field Mapping → Validation → Dry Run → Customization → Security → Review → Migration
+  // Steps configuration
   const steps = [
     { id: 1, title: 'Database Configuration', description: 'Configure source and target databases', icon: Database },
     { id: 2, title: 'Field Mapping', description: 'Map and transform database fields', icon: ArrowRight },
@@ -100,7 +101,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
   ];
 
   const handleNext = () => {
-    // ✅ Enforce correct flow order - validation and dry run must pass
+    // Enforce validation flow
     if (currentStep === 3 && !wizardState.validationPassed) {
       toast({
         title: "⚠️ Validation Required",
@@ -138,7 +139,6 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
     setIsProcessing(true);
     updateWizardState({ migrationStatus: 'running', migrationProgress: 0 });
     
-    // ✅ Final validation before migration
     if (!wizardState.validationPassed || !wizardState.dryRunPassed) {
       toast({
         title: "❌ Migration Blocked",
@@ -183,192 +183,95 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
     }
   };
 
+  const databases = [
+    { id: 'postgresql', name: 'PostgreSQL', category: 'SQL', icon: '🐘', color: 'bg-blue-500' },
+    { id: 'mysql', name: 'MySQL', category: 'SQL', icon: '🐬', color: 'bg-orange-500' },
+    { id: 'mongodb', name: 'MongoDB', category: 'NoSQL', icon: '🍃', color: 'bg-green-500' },
+    { id: 'redis', name: 'Redis', category: 'NoSQL', icon: '🔴', color: 'bg-red-500' },
+    { id: 'oracle', name: 'Oracle', category: 'SQL', icon: '🔶', color: 'bg-purple-500' },
+    { id: 'cassandra', name: 'Cassandra', category: 'NoSQL', icon: '⚡', color: 'bg-yellow-500' },
+    { id: 'elasticsearch', name: 'Elasticsearch', category: 'NoSQL', icon: '🔍', color: 'bg-teal-500' },
+    { id: 'neo4j', name: 'Neo4j', category: 'Graph', icon: '🔗', color: 'bg-indigo-500' }
+  ];
+
+  const renderDatabaseSelection = () => (
+    <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
+      <CardHeader className="text-center">
+        <CardTitle className="text-white text-2xl">Select Source & Target Databases</CardTitle>
+        <CardDescription className="text-gray-400">
+          Choose your source and destination databases with auto-detection
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-8">
+        {/* Source Database */}
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Database className="h-5 w-5 text-white" />
+            <h3 className="text-white font-medium text-lg">Source Database</h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {databases.map((db) => (
+              <button
+                key={`source-${db.id}`}
+                onClick={() => updateWizardState({
+                  sourceConfig: { ...wizardState.sourceConfig, type: db.id }
+                })}
+                className={`p-4 rounded-lg border-2 transition-all text-center hover:scale-105 ${
+                  wizardState.sourceConfig.type === db.id
+                    ? 'border-blue-400 bg-blue-500/20 ring-2 ring-blue-400/50'
+                    : 'border-white/20 bg-white/5 hover:bg-white/10'
+                }`}
+              >
+                <div className={`w-12 h-12 rounded-lg ${db.color} flex items-center justify-center text-2xl mx-auto mb-2`}>
+                  {db.icon}
+                </div>
+                <div className="text-white font-medium">{db.name}</div>
+                <div className="text-gray-400 text-sm">{db.category}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          <ArrowRight className="h-8 w-8 text-gray-400" />
+        </div>
+
+        {/* Target Database */}
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Target className="h-5 w-5 text-white" />
+            <h3 className="text-white font-medium text-lg">Target Database</h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {databases.map((db) => (
+              <button
+                key={`target-${db.id}`}
+                onClick={() => updateWizardState({
+                  targetConfig: { ...wizardState.targetConfig, type: db.id }
+                })}
+                className={`p-4 rounded-lg border-2 transition-all text-center hover:scale-105 ${
+                  wizardState.targetConfig.type === db.id
+                    ? 'border-green-400 bg-green-500/20 ring-2 ring-green-400/50'
+                    : 'border-white/20 bg-white/5 hover:bg-white/10'
+                }`}
+              >
+                <div className={`w-12 h-12 rounded-lg ${db.color} flex items-center justify-center text-2xl mx-auto mb-2`}>
+                  {db.icon}
+                </div>
+                <div className="text-white font-medium">{db.name}</div>
+                <div className="text-gray-400 text-sm">{db.category}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return (
-          <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
-            <CardHeader>
-              <CardTitle className="text-white">Database Configuration</CardTitle>
-              <CardDescription className="text-gray-400">
-                Configure your source and target database connections
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-white font-medium">Source Database</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-gray-300 text-sm">Database Type</label>
-                      <select 
-                        className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white"
-                        value={wizardState.sourceConfig.type}
-                        onChange={(e) => updateWizardState({
-                          sourceConfig: { ...wizardState.sourceConfig, type: e.target.value }
-                        })}
-                      >
-                        <option value="postgresql">PostgreSQL</option>
-                        <option value="mysql">MySQL</option>
-                        <option value="oracle">Oracle</option>
-                        <option value="mongodb">MongoDB</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-gray-300 text-sm">Host</label>
-                      <input 
-                        type="text" 
-                        value={wizardState.sourceConfig.host}
-                        onChange={(e) => updateWizardState({
-                          sourceConfig: { ...wizardState.sourceConfig, host: e.target.value }
-                        })}
-                        className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                        placeholder="localhost"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-gray-300 text-sm">Port</label>
-                        <input 
-                          type="text" 
-                          value={wizardState.sourceConfig.port}
-                          onChange={(e) => updateWizardState({
-                            sourceConfig: { ...wizardState.sourceConfig, port: e.target.value }
-                          })}
-                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                          placeholder="5432"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-gray-300 text-sm">Database</label>
-                        <input 
-                          type="text" 
-                          value={wizardState.sourceConfig.database}
-                          onChange={(e) => updateWizardState({
-                            sourceConfig: { ...wizardState.sourceConfig, database: e.target.value }
-                          })}
-                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                          placeholder="source_db"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-gray-300 text-sm">Username</label>
-                        <input 
-                          type="text" 
-                          value={wizardState.sourceConfig.username}
-                          onChange={(e) => updateWizardState({
-                            sourceConfig: { ...wizardState.sourceConfig, username: e.target.value }
-                          })}
-                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                          placeholder="postgres"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-gray-300 text-sm">Password</label>
-                        <input 
-                          type="password" 
-                          value={wizardState.sourceConfig.password}
-                          onChange={(e) => updateWizardState({
-                            sourceConfig: { ...wizardState.sourceConfig, password: e.target.value }
-                          })}
-                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                          placeholder="••••••••"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-white font-medium">Target Database</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-gray-300 text-sm">Database Type</label>
-                      <select 
-                        className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white"
-                        value={wizardState.targetConfig.type}
-                        onChange={(e) => updateWizardState({
-                          targetConfig: { ...wizardState.targetConfig, type: e.target.value }
-                        })}
-                      >
-                        <option value="mongodb">MongoDB</option>
-                        <option value="postgresql">PostgreSQL</option>
-                        <option value="mysql">MySQL</option>
-                        <option value="cassandra">Cassandra</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-gray-300 text-sm">Host</label>
-                      <input 
-                        type="text" 
-                        value={wizardState.targetConfig.host}
-                        onChange={(e) => updateWizardState({
-                          targetConfig: { ...wizardState.targetConfig, host: e.target.value }
-                        })}
-                        className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                        placeholder="localhost"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-gray-300 text-sm">Port</label>
-                        <input 
-                          type="text" 
-                          value={wizardState.targetConfig.port}
-                          onChange={(e) => updateWizardState({
-                            targetConfig: { ...wizardState.targetConfig, port: e.target.value }
-                          })}
-                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                          placeholder="27017"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-gray-300 text-sm">Database</label>
-                        <input 
-                          type="text" 
-                          value={wizardState.targetConfig.database}
-                          onChange={(e) => updateWizardState({
-                            targetConfig: { ...wizardState.targetConfig, database: e.target.value }
-                          })}
-                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                          placeholder="target_db"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-gray-300 text-sm">Username</label>
-                        <input 
-                          type="text" 
-                          value={wizardState.targetConfig.username}
-                          onChange={(e) => updateWizardState({
-                            targetConfig: { ...wizardState.targetConfig, username: e.target.value }
-                          })}
-                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                          placeholder="admin"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-gray-300 text-sm">Password</label>
-                        <input 
-                          type="password" 
-                          value={wizardState.targetConfig.password}
-                          onChange={(e) => updateWizardState({
-                            targetConfig: { ...wizardState.targetConfig, password: e.target.value }
-                          })}
-                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                          placeholder="••••••••"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
+        return renderDatabaseSelection();
 
       case 2:
         return (
@@ -618,41 +521,63 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
                         </h3>
                       </div>
 
+                      {/* Progress Bar */}
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <span className="text-white font-medium">Overall Progress</span>
                           <span className="text-white font-bold">{Math.round(wizardState.migrationProgress)}%</span>
                         </div>
-                        <Progress value={wizardState.migrationProgress} className="h-3" />
+                        <Progress value={wizardState.migrationProgress} className="h-4 bg-gray-700">
+                          <div 
+                            className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-1000 rounded-full"
+                            style={{ width: `${wizardState.migrationProgress}%` }}
+                          />
+                        </Progress>
                       </div>
 
+                      {/* Migration Stats */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        <div className="text-center">
+                        <div className="text-center bg-white/5 p-4 rounded-lg">
                           <TrendingUp className="h-5 w-5 text-blue-400 mx-auto mb-1" />
-                          <p className="text-gray-400">Records Processed</p>
-                          <p className="text-white font-medium">{Math.round(wizardState.migrationProgress * 1000)}/100,000</p>
+                          <p className="text-gray-400">Records Migrated</p>
+                          <p className="text-white font-medium">{Math.round(wizardState.migrationProgress * 1250)}/125,000</p>
                         </div>
-                        <div className="text-center">
+                        <div className="text-center bg-white/5 p-4 rounded-lg">
                           <Clock className="h-5 w-5 text-purple-400 mx-auto mb-1" />
                           <p className="text-gray-400">Time Remaining</p>
                           <p className="text-white font-medium">
                             {wizardState.migrationStatus === 'completed' 
                               ? '00:00:00' 
-                              : `${Math.round((100 - wizardState.migrationProgress) * 0.5)}:30`
+                              : `${Math.round((100 - wizardState.migrationProgress) * 0.1)}:${Math.round(Math.random() * 60).toString().padStart(2, '0')}`
                             }
                           </p>
                         </div>
-                        <div className="text-center">
+                        <div className="text-center bg-white/5 p-4 rounded-lg">
                           <Database className="h-5 w-5 text-green-400 mx-auto mb-1" />
-                          <p className="text-gray-400">Tables Migrated</p>
-                          <p className="text-white font-medium">{Math.round(wizardState.migrationProgress / 25)}/4</p>
+                          <p className="text-gray-400">Tables Completed</p>
+                          <p className="text-white font-medium">{Math.round(wizardState.migrationProgress / 12.5)}/8</p>
+                        </div>
+                      </div>
+
+                      {/* Live Migration Log */}
+                      <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 max-h-40 overflow-y-auto">
+                        <h4 className="text-white font-medium mb-2">Migration Log</h4>
+                        <div className="space-y-1 text-sm font-mono">
+                          {wizardState.migrationProgress > 10 && <div className="text-green-400">✅ Connected to source: {wizardState.sourceConfig.type}</div>}
+                          {wizardState.migrationProgress > 20 && <div className="text-green-400">✅ Connected to target: {wizardState.targetConfig.type}</div>}
+                          {wizardState.migrationProgress > 30 && <div className="text-blue-400">📊 Migrating: users_table...</div>}
+                          {wizardState.migrationProgress > 50 && <div className="text-green-400">✅ Completed: users_table (15,420 rows)</div>}
+                          {wizardState.migrationProgress > 60 && <div className="text-blue-400">📊 Migrating: orders_table...</div>}
+                          {wizardState.migrationProgress > 80 && <div className="text-green-400">✅ Completed: orders_table (42,350 rows)</div>}
+                          {wizardState.migrationProgress > 90 && <div className="text-blue-400">📊 Validating data integrity...</div>}
+                          {wizardState.migrationProgress >= 100 && <div className="text-green-400">🎉 Migration completed successfully!</div>}
                         </div>
                       </div>
 
                       {wizardState.migrationStatus === 'completed' && (
                         <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
                           <p className="text-green-400 font-medium">✅ Migration completed successfully!</p>
-                          <p className="text-gray-300 text-sm mt-1">All data has been migrated and validated.</p>
+                          <p className="text-gray-300 text-sm mt-1">All 125,000 records migrated and validated across 8 tables.</p>
                         </div>
                       )}
                     </div>
@@ -681,7 +606,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-white text-xl">Migration Setup Wizard</CardTitle>
+              <CardTitle className="text-white text-xl">Migration Configuration Wizard</CardTitle>
               <CardDescription className="text-gray-400">
                 Step {currentStep} of {steps.length}: {steps[currentStep - 1]?.title}
               </CardDescription>

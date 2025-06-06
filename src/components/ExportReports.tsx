@@ -179,6 +179,7 @@ export const ExportReports: React.FC = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         reportType={selectedReport}
+        migrationData={{}}
       />
     </div>
   );

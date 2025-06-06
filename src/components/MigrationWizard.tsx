@@ -1,4 +1,3 @@
-
 import React, { useState, useContext, createContext } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -157,7 +156,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
     
     // Simulate migration progress
     const progressInterval = setInterval(() => {
-      updateWizardState(prev => {
+      setWizardState(prev => {
         const newProgress = Math.min(prev.migrationProgress + Math.random() * 10, 100);
         if (newProgress >= 100) {
           clearInterval(progressInterval);

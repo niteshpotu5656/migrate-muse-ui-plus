@@ -1,4 +1,3 @@
-
 import React, { useState, useContext, createContext } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +22,8 @@ import {
   Loader2,
   AlertTriangle,
   TrendingUp,
-  Clock
+  Clock,
+  Link
 } from 'lucide-react';
 
 // Global state context for wizard
@@ -90,19 +90,20 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
 
   // Steps configuration
   const steps = [
-    { id: 1, title: 'Database Configuration', description: 'Configure source and target databases', icon: Database },
-    { id: 2, title: 'Field Mapping', description: 'Map and transform database fields', icon: ArrowRight },
-    { id: 3, title: 'Validation Checks', description: 'Validate connections and schema', icon: Shield },
-    { id: 4, title: 'Dry Run Analysis', description: 'Analyze migration complexity', icon: Target },
-    { id: 5, title: 'Customization Options', description: 'Configure transformation rules', icon: Wand2 },
-    { id: 6, title: 'Security Settings', description: 'Configure security and permissions', icon: Settings },
-    { id: 7, title: 'Final Review', description: 'Review all settings', icon: CheckCircle },
-    { id: 8, title: 'Migration Execution', description: 'Execute migration with progress', icon: Play }
+    { id: 1, title: 'Database Selection', description: 'Choose source and target databases', icon: Database },
+    { id: 2, title: 'Connectivity Settings', description: 'Confirm database connectivity setup', icon: Link },
+    { id: 3, title: 'Database Configuration', description: 'Configure connection details', icon: Settings },
+    { id: 4, title: 'Field Mapping', description: 'Map and transform database fields', icon: ArrowRight },
+    { id: 5, title: 'Validation Checks', description: 'Validate connections and schema', icon: Shield },
+    { id: 6, title: 'Dry Run Analysis', description: 'Analyze migration complexity', icon: Target },
+    { id: 7, title: 'Customization Options', description: 'Configure transformation rules', icon: Wand2 },
+    { id: 8, title: 'Final Review', description: 'Review all settings', icon: CheckCircle },
+    { id: 9, title: 'Migration Execution', description: 'Execute migration with progress', icon: Play }
   ];
 
   const handleNext = () => {
-    // Enforce validation flow
-    if (currentStep === 3 && !wizardState.validationPassed) {
+    // Enforce validation flow (adjusted for new step numbers)
+    if (currentStep === 5 && !wizardState.validationPassed) {
       toast({
         title: "⚠️ Validation Required",
         description: "Please complete validation checks before proceeding.",
@@ -111,7 +112,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
       return;
     }
     
-    if (currentStep === 4 && !wizardState.dryRunPassed) {
+    if (currentStep === 6 && !wizardState.dryRunPassed) {
       toast({
         title: "⚠️ Dry Run Required", 
         description: "Please complete dry run analysis before proceeding.",
@@ -176,9 +177,11 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
 
   const canProceedToNext = () => {
     switch (currentStep) {
-      case 1: return wizardState.sourceConfig.host && wizardState.targetConfig.host;
-      case 3: return wizardState.validationPassed;
-      case 4: return wizardState.dryRunPassed;
+      case 1: return wizardState.sourceConfig.type && wizardState.targetConfig.type;
+      case 2: return wizardState.sourceConfig.type && wizardState.targetConfig.type;
+      case 3: return wizardState.sourceConfig.host && wizardState.targetConfig.host;
+      case 5: return wizardState.validationPassed;
+      case 6: return wizardState.dryRunPassed;
       default: return true;
     }
   };
@@ -268,12 +271,158 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
     </Card>
   );
 
+  const renderConnectivitySettings = () => (
+    <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
+      <CardHeader className="text-center">
+        <CardTitle className="text-white text-2xl">Connectivity Configuration</CardTitle>
+        <CardDescription className="text-gray-400">
+          Confirm your database connectivity setup before proceeding to connection details
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-8">
+        <div className="flex items-center justify-center space-x-8">
+          {/* Source Database Display */}
+          <div className="text-center space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-white font-medium text-lg">Source Database</h3>
+              {wizardState.sourceConfig.type ? (
+                <div className="p-6 rounded-lg bg-blue-500/20 border-2 border-blue-400/50">
+                  <div className="w-16 h-16 rounded-lg bg-blue-500 flex items-center justify-center text-3xl mx-auto mb-3">
+                    {wizardState.sourceConfig.type === 'postgresql' && '🐘'}
+                    {wizardState.sourceConfig.type === 'mysql' && '🐬'}
+                    {wizardState.sourceConfig.type === 'mongodb' && '🍃'}
+                    {wizardState.sourceConfig.type === 'redis' && '🔴'}
+                    {wizardState.sourceConfig.type === 'oracle' && '🔶'}
+                    {wizardState.sourceConfig.type === 'cassandra' && '⚡'}
+                    {wizardState.sourceConfig.type === 'elasticsearch' && '🔍'}
+                    {wizardState.sourceConfig.type === 'neo4j' && '🔗'}
+                  </div>
+                  <div className="text-white font-bold text-xl capitalize">{wizardState.sourceConfig.type}</div>
+                  <div className="text-blue-200 text-sm">
+                    {wizardState.sourceConfig.type === 'postgresql' || wizardState.sourceConfig.type === 'mysql' || wizardState.sourceConfig.type === 'oracle' ? 'SQL Database' : 
+                     wizardState.sourceConfig.type === 'neo4j' ? 'Graph Database' : 'NoSQL Database'}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 rounded-lg bg-gray-500/20 border-2 border-gray-400/50">
+                  <div className="text-gray-400">No source selected</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Arrow */}
+          <div className="flex flex-col items-center space-y-2">
+            <ArrowRight className="h-8 w-8 text-white" />
+            <span className="text-gray-400 text-sm">Migration</span>
+          </div>
+
+          {/* Target Database Display */}
+          <div className="text-center space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-white font-medium text-lg">Target Database</h3>
+              {wizardState.targetConfig.type ? (
+                <div className="p-6 rounded-lg bg-green-500/20 border-2 border-green-400/50">
+                  <div className="w-16 h-16 rounded-lg bg-green-500 flex items-center justify-center text-3xl mx-auto mb-3">
+                    {wizardState.targetConfig.type === 'postgresql' && '🐘'}
+                    {wizardState.targetConfig.type === 'mysql' && '🐬'}
+                    {wizardState.targetConfig.type === 'mongodb' && '🍃'}
+                    {wizardState.targetConfig.type === 'redis' && '🔴'}
+                    {wizardState.targetConfig.type === 'oracle' && '🔶'}
+                    {wizardState.targetConfig.type === 'cassandra' && '⚡'}
+                    {wizardState.targetConfig.type === 'elasticsearch' && '🔍'}
+                    {wizardState.targetConfig.type === 'neo4j' && '🔗'}
+                  </div>
+                  <div className="text-white font-bold text-xl capitalize">{wizardState.targetConfig.type}</div>
+                  <div className="text-green-200 text-sm">
+                    {wizardState.targetConfig.type === 'postgresql' || wizardState.targetConfig.type === 'mysql' || wizardState.targetConfig.type === 'oracle' ? 'SQL Database' : 
+                     wizardState.targetConfig.type === 'neo4j' ? 'Graph Database' : 'NoSQL Database'}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 rounded-lg bg-gray-500/20 border-2 border-gray-400/50">
+                  <div className="text-gray-400">No target selected</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Connectivity Summary */}
+        <div className="bg-white/5 rounded-lg p-6 space-y-4">
+          <h4 className="text-white font-medium flex items-center space-x-2">
+            <CheckCircle className="h-5 w-5 text-green-400" />
+            <span>Connectivity Overview</span>
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-300">Source Type:</span>
+                <span className="text-white capitalize">{wizardState.sourceConfig.type || 'Not selected'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">Target Type:</span>
+                <span className="text-white capitalize">{wizardState.targetConfig.type || 'Not selected'}</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-300">Migration Type:</span>
+                <span className="text-white">
+                  {wizardState.sourceConfig.type && wizardState.targetConfig.type 
+                    ? (wizardState.sourceConfig.type === wizardState.targetConfig.type ? 'Same-type Migration' : 'Cross-platform Migration')
+                    : 'Pending Selection'
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-300">Complexity:</span>
+                <span className={`font-medium ${
+                  wizardState.sourceConfig.type && wizardState.targetConfig.type
+                    ? wizardState.sourceConfig.type === wizardState.targetConfig.type 
+                      ? 'text-green-400' 
+                      : 'text-yellow-400'
+                    : 'text-gray-400'
+                }`}>
+                  {wizardState.sourceConfig.type && wizardState.targetConfig.type 
+                    ? (wizardState.sourceConfig.type === wizardState.targetConfig.type ? 'Low' : 'Medium')
+                    : 'Unknown'
+                  }
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Next Steps Info */}
+        <div className="text-center space-y-2">
+          <p className="text-gray-300 text-sm">
+            Next, you'll configure connection details including hostnames, ports, and credentials.
+          </p>
+          <p className="text-blue-400 text-xs">
+            ✔ Source: {wizardState.sourceConfig.type || 'Not selected'} | Target: {wizardState.targetConfig.type || 'Not selected'}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return renderDatabaseSelection();
 
       case 2:
+        return renderConnectivitySettings();
+
+      case 3:
+        return (
+          <WizardContext.Provider value={{ state: wizardState, updateState: updateWizardState }}>
+            <DatabaseConnectionConfig />
+          </WizardContext.Provider>
+        );
+
+      case 4:
         return (
           <WizardContext.Provider value={{ state: wizardState, updateState: updateWizardState }}>
             <FieldMappingEngine
@@ -290,7 +439,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
           </WizardContext.Provider>
         );
 
-      case 3:
+      case 5:
         return (
           <ValidationPanel
             migrationId="wizard_validation"
@@ -308,7 +457,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
           />
         );
 
-      case 4:
+      case 6:
         return (
           <DryRunPanel
             migrationConfig={wizardState}
@@ -322,7 +471,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
           />
         );
 
-      case 5:
+      case 7:
         return (
           <WizardContext.Provider value={{ state: wizardState, updateState: updateWizardState }}>
             <CustomTransformationBuilder
@@ -337,67 +486,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
           </WizardContext.Provider>
         );
 
-      case 6:
-        return (
-          <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
-            <CardHeader>
-              <CardTitle className="text-white">Security Settings</CardTitle>
-              <CardDescription className="text-gray-400">
-                Configure security options for your migration
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-white">Enable SSL Connection</span>
-                  <input 
-                    type="checkbox" 
-                    checked={wizardState.securitySettings.ssl}
-                    onChange={(e) => updateWizardState({
-                      securitySettings: { ...wizardState.securitySettings, ssl: e.target.checked }
-                    })}
-                    className="rounded" 
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white">Encrypt Data in Transit</span>
-                  <input 
-                    type="checkbox" 
-                    checked={wizardState.securitySettings.encrypt}
-                    onChange={(e) => updateWizardState({
-                      securitySettings: { ...wizardState.securitySettings, encrypt: e.target.checked }
-                    })}
-                    className="rounded" 
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white">Enable Audit Logging</span>
-                  <input 
-                    type="checkbox" 
-                    checked={wizardState.securitySettings.audit}
-                    onChange={(e) => updateWizardState({
-                      securitySettings: { ...wizardState.securitySettings, audit: e.target.checked }
-                    })}
-                    className="rounded" 
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white">Backup Before Migration</span>
-                  <input 
-                    type="checkbox" 
-                    checked={wizardState.securitySettings.backup}
-                    onChange={(e) => updateWizardState({
-                      securitySettings: { ...wizardState.securitySettings, backup: e.target.checked }
-                    })}
-                    className="rounded" 
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-
-      case 7:
+      case 8:
         return (
           <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
             <CardHeader>
@@ -463,7 +552,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
           </Card>
         );
 
-      case 8:
+      case 9:
         return (
           <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
             <CardHeader>
@@ -620,7 +709,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
       </Card>
 
       {/* Step Indicators */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
         {steps.map((step) => {
           const Icon = step.icon;
           const isActive = step.id === currentStep;
@@ -640,13 +729,13 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
                   : 'bg-white/5 border-white/10'
               }`}
             >
-              <Icon className={`h-5 w-5 mx-auto mb-2 ${
+              <Icon className={`h-4 w-4 mx-auto mb-1 ${
                 isActive ? 'text-blue-400' : isCompleted ? 'text-green-400' : 'text-gray-400'
               }`} />
               <div className={`text-xs font-medium ${
                 isActive ? 'text-blue-400' : isCompleted ? 'text-green-400' : 'text-gray-400'
               }`}>
-                {step.title}
+                {step.title.split(' ')[0]}
               </div>
             </div>
           );
@@ -665,7 +754,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
           className="border-white/20 text-gray-900 bg-white hover:bg-gray-100 hover:text-gray-800"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Previous
+          {currentStep === 2 ? 'Back to Selection' : 'Previous'}
         </Button>
 
         {currentStep < steps.length && (
@@ -674,7 +763,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
             disabled={!canProceedToNext()}
             className="bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
           >
-            Next
+            {currentStep === 2 ? 'Continue to Connection Setup' : 'Next'}
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         )}

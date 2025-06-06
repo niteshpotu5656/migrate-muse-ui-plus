@@ -9,6 +9,7 @@ import { ValidationPanel } from './ValidationPanel';
 import { DryRunPanel } from './DryRunPanel';
 import { FieldMappingEngine } from './FieldMappingEngine';
 import { CustomTransformationBuilder } from './CustomTransformationBuilder';
+import { DatabaseConnectionConfig } from './DatabaseConnectionConfig';
 import { 
   Database, 
   ArrowRight, 
@@ -20,7 +21,9 @@ import {
   Wand2,
   Target,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  TrendingUp,
+  Clock
 } from 'lucide-react';
 
 // Global state context for wizard
@@ -32,6 +35,8 @@ interface WizardState {
   validationPassed: boolean;
   dryRunPassed: boolean;
   securitySettings: any;
+  migrationProgress: number;
+  migrationStatus: 'idle' | 'running' | 'completed' | 'error';
 }
 
 interface WizardContextType {
@@ -50,21 +55,40 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  // Global wizard state
+  // Global wizard state with persistence
   const [wizardState, setWizardState] = useState<WizardState>({
-    sourceConfig: { type: 'postgresql', host: 'localhost', database: 'source_db' },
-    targetConfig: { type: 'mongodb', host: 'localhost', database: 'target_db' },
+    sourceConfig: { 
+      type: 'postgresql', 
+      host: 'localhost', 
+      port: '5432',
+      database: 'source_db',
+      username: '',
+      password: '',
+      ssl: true
+    },
+    targetConfig: { 
+      type: 'mongodb', 
+      host: 'localhost', 
+      port: '27017',
+      database: 'target_db',
+      username: '',
+      password: '',
+      ssl: false
+    },
     fieldMappings: [],
     transformationRules: [],
     validationPassed: false,
     dryRunPassed: false,
-    securitySettings: { ssl: true, encrypt: true, audit: true, backup: true }
+    securitySettings: { ssl: true, encrypt: true, audit: true, backup: true },
+    migrationProgress: 0,
+    migrationStatus: 'idle'
   });
 
   const updateWizardState = (updates: Partial<WizardState>) => {
     setWizardState(prev => ({ ...prev, ...updates }));
   };
 
+  // Corrected flow order: DB Config → Field Mapping → Validation → Dry Run → Customization → Security → Review → Migration
   const steps = [
     { id: 1, title: 'Database Configuration', description: 'Configure source and target databases', icon: Database },
     { id: 2, title: 'Field Mapping', description: 'Map and transform database fields', icon: ArrowRight },
@@ -73,11 +97,11 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
     { id: 5, title: 'Customization Options', description: 'Configure transformation rules', icon: Wand2 },
     { id: 6, title: 'Security Settings', description: 'Configure security and permissions', icon: Settings },
     { id: 7, title: 'Final Review', description: 'Review all settings', icon: CheckCircle },
-    { id: 8, title: 'Start Migration', description: 'Begin migration process', icon: Play }
+    { id: 8, title: 'Migration Execution', description: 'Execute migration with progress', icon: Play }
   ];
 
   const handleNext = () => {
-    // ✅ Enforce flow order - migration only after validation + dry run
+    // ✅ Enforce correct flow order - validation and dry run must pass
     if (currentStep === 3 && !wizardState.validationPassed) {
       toast({
         title: "⚠️ Validation Required",
@@ -113,6 +137,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
 
   const handleStartMigration = async () => {
     setIsProcessing(true);
+    updateWizardState({ migrationStatus: 'running', migrationProgress: 0 });
     
     // ✅ Final validation before migration
     if (!wizardState.validationPassed || !wizardState.dryRunPassed) {
@@ -125,13 +150,26 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
       return;
     }
     
-    // Simulate final checks
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
     toast({
       title: "✅ Migration Started",
-      description: "Database migration has begun. Check Live Console for progress.",
+      description: "Database migration has begun. Monitoring progress...",
     });
+    
+    // Simulate migration progress
+    const progressInterval = setInterval(() => {
+      updateWizardState(prev => {
+        const newProgress = Math.min(prev.migrationProgress + Math.random() * 10, 100);
+        if (newProgress >= 100) {
+          clearInterval(progressInterval);
+          toast({
+            title: "🎉 Migration Complete!",
+            description: "All data has been successfully migrated.",
+          });
+          return { ...prev, migrationProgress: 100, migrationStatus: 'completed' };
+        }
+        return { ...prev, migrationProgress: newProgress };
+      });
+    }, 1000);
     
     setIsProcessing(false);
     onMigrationStart();
@@ -139,6 +177,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
 
   const canProceedToNext = () => {
     switch (currentStep) {
+      case 1: return wizardState.sourceConfig.host && wizardState.targetConfig.host;
       case 3: return wizardState.validationPassed;
       case 4: return wizardState.dryRunPassed;
       default: return true;
@@ -173,6 +212,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
                         <option value="postgresql">PostgreSQL</option>
                         <option value="mysql">MySQL</option>
                         <option value="oracle">Oracle</option>
+                        <option value="mongodb">MongoDB</option>
                       </select>
                     </div>
                     <div>
@@ -184,18 +224,60 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
                           sourceConfig: { ...wizardState.sourceConfig, host: e.target.value }
                         })}
                         className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+                        placeholder="localhost"
                       />
                     </div>
-                    <div>
-                      <label className="text-gray-300 text-sm">Database Name</label>
-                      <input 
-                        type="text" 
-                        value={wizardState.sourceConfig.database}
-                        onChange={(e) => updateWizardState({
-                          sourceConfig: { ...wizardState.sourceConfig, database: e.target.value }
-                        })}
-                        className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-gray-300 text-sm">Port</label>
+                        <input 
+                          type="text" 
+                          value={wizardState.sourceConfig.port}
+                          onChange={(e) => updateWizardState({
+                            sourceConfig: { ...wizardState.sourceConfig, port: e.target.value }
+                          })}
+                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+                          placeholder="5432"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-gray-300 text-sm">Database</label>
+                        <input 
+                          type="text" 
+                          value={wizardState.sourceConfig.database}
+                          onChange={(e) => updateWizardState({
+                            sourceConfig: { ...wizardState.sourceConfig, database: e.target.value }
+                          })}
+                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+                          placeholder="source_db"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-gray-300 text-sm">Username</label>
+                        <input 
+                          type="text" 
+                          value={wizardState.sourceConfig.username}
+                          onChange={(e) => updateWizardState({
+                            sourceConfig: { ...wizardState.sourceConfig, username: e.target.value }
+                          })}
+                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+                          placeholder="postgres"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-gray-300 text-sm">Password</label>
+                        <input 
+                          type="password" 
+                          value={wizardState.sourceConfig.password}
+                          onChange={(e) => updateWizardState({
+                            sourceConfig: { ...wizardState.sourceConfig, password: e.target.value }
+                          })}
+                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+                          placeholder="••••••••"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -215,6 +297,7 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
                         <option value="mongodb">MongoDB</option>
                         <option value="postgresql">PostgreSQL</option>
                         <option value="mysql">MySQL</option>
+                        <option value="cassandra">Cassandra</option>
                       </select>
                     </div>
                     <div>
@@ -226,18 +309,60 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
                           targetConfig: { ...wizardState.targetConfig, host: e.target.value }
                         })}
                         className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+                        placeholder="localhost"
                       />
                     </div>
-                    <div>
-                      <label className="text-gray-300 text-sm">Database Name</label>
-                      <input 
-                        type="text" 
-                        value={wizardState.targetConfig.database}
-                        onChange={(e) => updateWizardState({
-                          targetConfig: { ...wizardState.targetConfig, database: e.target.value }
-                        })}
-                        className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-gray-300 text-sm">Port</label>
+                        <input 
+                          type="text" 
+                          value={wizardState.targetConfig.port}
+                          onChange={(e) => updateWizardState({
+                            targetConfig: { ...wizardState.targetConfig, port: e.target.value }
+                          })}
+                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+                          placeholder="27017"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-gray-300 text-sm">Database</label>
+                        <input 
+                          type="text" 
+                          value={wizardState.targetConfig.database}
+                          onChange={(e) => updateWizardState({
+                            targetConfig: { ...wizardState.targetConfig, database: e.target.value }
+                          })}
+                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+                          placeholder="target_db"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-gray-300 text-sm">Username</label>
+                        <input 
+                          type="text" 
+                          value={wizardState.targetConfig.username}
+                          onChange={(e) => updateWizardState({
+                            targetConfig: { ...wizardState.targetConfig, username: e.target.value }
+                          })}
+                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+                          placeholder="admin"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-gray-300 text-sm">Password</label>
+                        <input 
+                          type="password" 
+                          value={wizardState.targetConfig.password}
+                          onChange={(e) => updateWizardState({
+                            targetConfig: { ...wizardState.targetConfig, password: e.target.value }
+                          })}
+                          className="w-full mt-1 p-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+                          placeholder="••••••••"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -386,11 +511,11 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-300">Source:</span>
-                      <span className="text-white">{wizardState.sourceConfig.type} ({wizardState.sourceConfig.host})</span>
+                      <span className="text-white">{wizardState.sourceConfig.type} ({wizardState.sourceConfig.host}:{wizardState.sourceConfig.port})</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-300">Target:</span>
-                      <span className="text-white">{wizardState.targetConfig.type} ({wizardState.targetConfig.host})</span>
+                      <span className="text-white">{wizardState.targetConfig.type} ({wizardState.targetConfig.host}:{wizardState.targetConfig.port})</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-300">Field Mappings:</span>
@@ -440,44 +565,102 @@ export const MigrationWizard: React.FC<MigrationWizardProps> = ({ onMigrationSta
         return (
           <Card className="bg-black/20 border-white/10 backdrop-blur-xl">
             <CardHeader>
-              <CardTitle className="text-white">Start Migration</CardTitle>
+              <CardTitle className="text-white">Migration Execution</CardTitle>
               <CardDescription className="text-gray-400">
-                Ready to begin the database migration process
+                Monitor real-time migration progress
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="text-center py-8">
-                <Play className="h-16 w-16 text-green-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">Ready to Migrate</h3>
-                <p className="text-gray-300 mb-6">
-                  All checks passed. Click the button below to start the migration process.
-                </p>
-                
-                {/* ✅ Migration button disabled until validation + dry run pass */}
-                <Button
-                  onClick={handleStartMigration}
-                  disabled={isProcessing || !wizardState.validationPassed || !wizardState.dryRunPassed}
-                  className="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                      Starting Migration...
-                    </>
-                  ) : !wizardState.validationPassed || !wizardState.dryRunPassed ? (
-                    <>
-                      <AlertTriangle className="h-5 w-5 mr-2" />
-                      Complete Validation & Dry Run First
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-5 w-5 mr-2" />
-                      Start Migration Now
-                    </>
-                  )}
-                </Button>
-                
-                {(!wizardState.validationPassed || !wizardState.dryRunPassed) && (
+                {wizardState.migrationStatus === 'idle' && (
+                  <>
+                    <Play className="h-16 w-16 text-green-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-white mb-2">Ready to Migrate</h3>
+                    <p className="text-gray-300 mb-6">
+                      All checks passed. Click the button below to start the migration process.
+                    </p>
+                    
+                    <Button
+                      onClick={handleStartMigration}
+                      disabled={isProcessing || !wizardState.validationPassed || !wizardState.dryRunPassed}
+                      className="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                          Starting Migration...
+                        </>
+                      ) : !wizardState.validationPassed || !wizardState.dryRunPassed ? (
+                        <>
+                          <AlertTriangle className="h-5 w-5 mr-2" />
+                          Complete Validation & Dry Run First
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-5 w-5 mr-2" />
+                          Start Migration Now
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
+
+                {(wizardState.migrationStatus === 'running' || wizardState.migrationStatus === 'completed') && (
+                  <>
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-center space-x-3">
+                        {wizardState.migrationStatus === 'running' ? (
+                          <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
+                        ) : (
+                          <CheckCircle className="h-8 w-8 text-green-400" />
+                        )}
+                        <h3 className="text-xl font-semibold text-white">
+                          {wizardState.migrationStatus === 'running' ? 'Migration in Progress' : 'Migration Complete!'}
+                        </h3>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-white font-medium">Overall Progress</span>
+                          <span className="text-white font-bold">{Math.round(wizardState.migrationProgress)}%</span>
+                        </div>
+                        <Progress value={wizardState.migrationProgress} className="h-3" />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div className="text-center">
+                          <TrendingUp className="h-5 w-5 text-blue-400 mx-auto mb-1" />
+                          <p className="text-gray-400">Records Processed</p>
+                          <p className="text-white font-medium">{Math.round(wizardState.migrationProgress * 1000)}/100,000</p>
+                        </div>
+                        <div className="text-center">
+                          <Clock className="h-5 w-5 text-purple-400 mx-auto mb-1" />
+                          <p className="text-gray-400">Time Remaining</p>
+                          <p className="text-white font-medium">
+                            {wizardState.migrationStatus === 'completed' 
+                              ? '00:00:00' 
+                              : `${Math.round((100 - wizardState.migrationProgress) * 0.5)}:30`
+                            }
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <Database className="h-5 w-5 text-green-400 mx-auto mb-1" />
+                          <p className="text-gray-400">Tables Migrated</p>
+                          <p className="text-white font-medium">{Math.round(wizardState.migrationProgress / 25)}/4</p>
+                        </div>
+                      </div>
+
+                      {wizardState.migrationStatus === 'completed' && (
+                        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                          <p className="text-green-400 font-medium">✅ Migration completed successfully!</p>
+                          <p className="text-gray-300 text-sm mt-1">All data has been migrated and validated.</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {(!wizardState.validationPassed || !wizardState.dryRunPassed) && wizardState.migrationStatus === 'idle' && (
                   <p className="text-yellow-400 text-sm mt-4">
                     ⚠️ Migration requires both validation and dry run to be completed successfully.
                   </p>

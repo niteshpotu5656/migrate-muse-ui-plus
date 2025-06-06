@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,7 @@ import { LearningSystem } from '@/components/LearningSystem';
 import { AutoUpdateModule } from '@/components/AutoUpdateModule';
 import { ConsoleLogStream } from '@/components/ConsoleLogStream';
 import { ExportConfirmationModal } from '@/components/ExportConfirmationModal';
+import { SecuritySettings } from '@/components/SecuritySettings';
 import { 
   Database, 
   Play, 
@@ -36,6 +36,19 @@ const Index = () => {
   const handleExportClick = (type: string) => {
     setExportType(type);
     setExportModalOpen(true);
+  };
+
+  // Navigation handlers for home page tiles
+  const handleNavigateToHistory = () => {
+    setActiveTab('history');
+  };
+
+  const handleNavigateToAnalytics = () => {
+    setActiveTab('console');
+  };
+
+  const handleNavigateToSecurity = () => {
+    setActiveTab('settings');
   };
 
   return (
@@ -115,7 +128,12 @@ const Index = () => {
 
           {/* Tab Content */}
           <TabsContent value="welcome" className="space-y-6">
-            <WelcomeSection onStartMigration={() => setActiveTab('wizard')} />
+            <WelcomeSection 
+              onStartMigration={() => setActiveTab('wizard')}
+              onNavigateToHistory={handleNavigateToHistory}
+              onNavigateToAnalytics={handleNavigateToAnalytics}
+              onNavigateToSecurity={handleNavigateToSecurity}
+            />
           </TabsContent>
 
           <TabsContent value="wizard" className="space-y-6">

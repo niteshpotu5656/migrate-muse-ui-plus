@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,9 +20,17 @@ import {
 
 interface WelcomeSectionProps {
   onStartMigration: () => void;
+  onNavigateToHistory: () => void;
+  onNavigateToAnalytics: () => void;
+  onNavigateToSecurity: () => void;
 }
 
-export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ onStartMigration }) => {
+export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ 
+  onStartMigration, 
+  onNavigateToHistory,
+  onNavigateToAnalytics,
+  onNavigateToSecurity
+}) => {
   const recentMigrations = [
     { id: 1, name: "PostgreSQL → MongoDB", status: "completed", time: "2 hours ago", complexity: "Medium" },
     { id: 2, name: "MySQL → PostgreSQL", status: "running", time: "In progress", complexity: "High" },
@@ -69,7 +76,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ onStartMigration
           </CardContent>
         </Card>
 
-        <Card className="bg-black/20 border-white/10 backdrop-blur-xl hover:bg-black/30 transition-all duration-300 cursor-pointer group">
+        <Card className="bg-black/20 border-white/10 backdrop-blur-xl hover:bg-black/30 transition-all duration-300 cursor-pointer group" onClick={onNavigateToHistory}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <History className="h-8 w-8 text-blue-400 group-hover:scale-110 transition-transform" />
@@ -84,7 +91,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ onStartMigration
           </CardContent>
         </Card>
 
-        <Card className="bg-black/20 border-white/10 backdrop-blur-xl hover:bg-black/30 transition-all duration-300 cursor-pointer group">
+        <Card className="bg-black/20 border-white/10 backdrop-blur-xl hover:bg-black/30 transition-all duration-300 cursor-pointer group" onClick={onNavigateToAnalytics}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <BarChart className="h-8 w-8 text-purple-400 group-hover:scale-110 transition-transform" />
@@ -99,7 +106,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({ onStartMigration
           </CardContent>
         </Card>
 
-        <Card className="bg-black/20 border-white/10 backdrop-blur-xl hover:bg-black/30 transition-all duration-300 cursor-pointer group">
+        <Card className="bg-black/20 border-white/10 backdrop-blur-xl hover:bg-black/30 transition-all duration-300 cursor-pointer group" onClick={onNavigateToSecurity}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <Shield className="h-8 w-8 text-orange-400 group-hover:scale-110 transition-transform" />

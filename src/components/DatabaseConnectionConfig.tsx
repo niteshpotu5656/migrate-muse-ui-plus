@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Database, 
   CheckCircle, 
@@ -34,7 +35,7 @@ export const DatabaseConnectionConfig: React.FC<DatabaseConnectionConfigProps> =
   onBack
 }) => {
   const [config, setConfig] = useState({
-    host: '',
+    host: 'localhost',
     port: '',
     database: '',
     username: '',
@@ -49,6 +50,7 @@ export const DatabaseConnectionConfig: React.FC<DatabaseConnectionConfigProps> =
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [connectionMessage, setConnectionMessage] = useState('');
+  const { toast } = useToast();
 
   // Get default port and connection options based on database type
   const getDatabaseDefaults = (dbType: string) => {
@@ -74,16 +76,30 @@ export const DatabaseConnectionConfig: React.FC<DatabaseConnectionConfigProps> =
     setIsTestingConnection(true);
     setConnectionStatus('idle');
     
+    toast({
+      title: "🔍 Testing Connection",
+      description: "Attempting to connect to the database...",
+    });
+    
     // Simulate connection test
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
     // Mock validation logic
-    if (config.host && config.port && config.username) {
+    if (config.host && config.port && config.username && config.password) {
       setConnectionStatus('success');
-      setConnectionMessage('Connection successful! Database is reachable.');
+      setConnectionMessage('🔐 Connection successful! Database is reachable and credentials are valid.');
+      toast({
+        title: "✅ Connection Successful",
+        description: "Database connection established successfully!",
+      });
     } else {
       setConnectionStatus('error');
-      setConnectionMessage('Connection failed. Please check your credentials and try again.');
+      setConnectionMessage('❌ Connection failed. Please check your credentials and try again.');
+      toast({
+        title: "❌ Connection Failed",
+        description: "Unable to connect. Please verify your settings.",
+        variant: "destructive",
+      });
     }
     
     setIsTestingConnection(false);
@@ -91,6 +107,10 @@ export const DatabaseConnectionConfig: React.FC<DatabaseConnectionConfigProps> =
 
   const handleConfigure = () => {
     if (connectionStatus === 'success') {
+      toast({
+        title: "✅ Configuration Saved",
+        description: "Database connection configured successfully!",
+      });
       onConnectionConfigured({
         databaseType,
         databaseName,
@@ -276,7 +296,7 @@ export const DatabaseConnectionConfig: React.FC<DatabaseConnectionConfigProps> =
           <div className="space-y-4">
             <Button 
               onClick={testConnection}
-              disabled={isTestingConnection || !config.host || !config.port}
+              disabled={isTestingConnection || !config.host || !config.port || !config.username || !config.password}
               className="w-full bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30"
             >
               {isTestingConnection ? (
@@ -321,7 +341,7 @@ export const DatabaseConnectionConfig: React.FC<DatabaseConnectionConfigProps> =
         <Button 
           variant="outline" 
           onClick={onBack}
-          className="border-white/20 text-white hover:bg-white/10"
+          className="border-white/20 text-gray-900 bg-white hover:bg-gray-100"
         >
           Back to Database Selection
         </Button>
@@ -329,7 +349,7 @@ export const DatabaseConnectionConfig: React.FC<DatabaseConnectionConfigProps> =
         <Button 
           onClick={handleConfigure}
           disabled={connectionStatus !== 'success'}
-          className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold"
+          className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold disabled:opacity-50"
         >
           <CheckCircle className="h-4 w-4 mr-2" />
           Continue to Migration Setup
